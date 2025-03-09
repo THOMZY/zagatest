@@ -525,7 +525,69 @@ footer {
   transition: all 0.25s ease;
 }
 
-/* Corrections pour les textes illisibles */
+/* Style pour l'en-tête du topic */
+.topic-header {
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.topic-header h2 {
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.topic-info {
+    display: inline-flex;
+    align-items: center;
+    background-color: #242424;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.topic-info .text-muted {
+    color: #90caf9 !important;
+    margin-right: 0.5rem;
+}
+
+.message-count .badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+
+/* Amélioration du fil d'Ariane */
+.breadcrumb {
+    padding: 1rem;
+    background-color: #222;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.breadcrumb-item a {
+    color: #64b5f6;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb-item a:hover {
+    color: #90caf9;
+    text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+    color: #ddd;
+}
+
+/* S'assurer que les smileys dans le titre sont bien alignés */
+.display-6 img.smiley {
+    vertical-align: middle;
+    margin-bottom: 0.25rem;
+}
 
 /* Correction pour "Sujet créé le" */
 .card-body .mb-0 {
