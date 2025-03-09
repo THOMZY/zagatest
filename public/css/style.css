@@ -21,6 +21,7 @@ main {
 /* Styles pour les messages */
 .message-card {
     margin-bottom: 1.5rem;
+    max-width: 100%;
 }
 
 .message-header {
@@ -34,6 +35,8 @@ main {
     border: 1px solid #e0e0e0;
     border-top: none;
     border-radius: 0 0 0.25rem 0.25rem;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .user-info {
@@ -52,6 +55,26 @@ main {
     border-radius: 50%;
     margin-bottom: 0.5rem;
     object-fit: cover;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+}
+
+/* Header des posts */
+.post-header-container {
+    width: 100%;
+    overflow: hidden;
+    max-height: 120px;
+}
+
+.post-header-image {
+    width: 100%;
+    max-height: 120px; 
+    object-fit: cover;
+}
+
+/* Assurer que la largeur du message ne dépasse pas celle du header */
+.row.message-layout {
+    max-width: 100%;
 }
 
 /* Styles pour la recherche */
@@ -59,6 +82,38 @@ main {
     background-color: #fff3cd;
     padding: 0 2px;
     border-radius: 2px;
+}
+
+/* Ajouter un avatar de secours en cas d'image manquante */
+.user-info {
+    position: relative;
+}
+
+.user-info::before {
+    content: attr(data-username-initial);
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    color: #666;
+    display: none;
+}
+
+.user-avatar:not([src]), .user-avatar[src=""], .user-avatar[src="public/img/avatars/"] {
+    opacity: 0.3;
+}
+
+.user-avatar:not([src]) ~ .user-info::before, 
+.user-avatar[src=""] ~ .user-info::before,
+.user-avatar[src="public/img/avatars/"] ~ .user-info::before {
+    display: block;
+}
+
+/* Limiter la largeur des messages pour qu'ils s'alignent avec les headers */
+.message-card {
+    max-width: 100%;
+    overflow: hidden;
 }
 
 /* Réglages pour les écrans plus petits */

@@ -79,7 +79,8 @@ $messages_query = $db->query("
         u.pseudo AS user_name,
         u.time AS date_inscription,
         u.avatar,
-        u.nbmess AS user_post_count
+        u.nbmess AS user_post_count,
+        u.postheader
     FROM 
         rf_messages m
     JOIN 
@@ -91,6 +92,49 @@ $messages_query = $db->query("
         m.time ASC
     LIMIT $offset, $messages_per_page
 ");
+
+// Fonction pour obtenir le bon chemin d'avatar
+function get_avatar_path($avatar) {
+    if (empty($avatar)) {
+        return 'public/img/avatars/default-avatar.png'; // Chemin corrigé
+    }
+    
+    // Si c'est une URL complète
+    if (strpos($avatar, 'http://') === 0 || strpos($avatar, 'https://') === 0) {
+        // On garde l'URL externe telle quelle
+        return $avatar;
+    }
+    
+    // Sinon, c'est un fichier local
+    $local_path = 'public/img/avatars/' . $avatar;
+    if (file_exists($local_path)) {
+        return $local_path;
+    }
+    
+    // Si le fichier local n'existe pas, utiliser l'avatar par défaut
+    return 'public/img/avatars/default-avatar.png'; // Chemin corrigé
+}
+
+// Fonction pour obtenir le bon chemin du header
+function get_header_path($header) {
+    if (empty($header)) {
+        return '';
+    }
+    
+    // Si c'est une URL complète
+    if (strpos($header, 'http://') === 0 || strpos($header, 'https://') === 0) {
+        // On garde l'URL externe telle quelle
+        return $header;
+    }
+    
+    // Sinon, c'est un fichier local
+    $local_path = 'public/img/bars/' . $header;
+    if (file_exists($local_path)) {
+        return $local_path;
+    }
+    
+    return '';
+}
 
 // Inclure l'en-tête
 include 'includes/header.php';
@@ -119,14 +163,19 @@ include 'includes/header.php';
             <a href="#message-<?php echo $message->id; ?>" class="btn btn-sm btn-outline-secondary message-link">Lien</a>
         </div>
         
+        <?php 
+        $header_path = get_header_path($message->postheader);
+        if (!empty($header_path)): 
+        ?>
+        <div class="post-header-container">
+            <img src="<?php echo $header_path; ?>" alt="Post Header" class="post-header-image img-fluid">
+        </div>
+        <?php endif; ?>
+        
         <div class="row message-layout g-0">
             <div class="col-md-2">
-                <div class="user-info h-100">
-                    <img 
-                        src="<?php echo $message->avatar ? 'public/img/avatars/' . secure_output($message->avatar) : 'public/img/default-avatar.png'; ?>" 
-                        alt="Avatar" 
-                        class="user-avatar"
-                    >
+                <div class="user-info h-100" data-username-initial="<?php echo strtoupper(substr($message->user_name, 0, 1)); ?>">
+                    <img src="<?php echo get_avatar_path($message->avatar); ?>" alt="Avatar" class="user-avatar">
                     <h5 class="h6 mb-1"><?php echo secure_output($message->user_name); ?></h5>
                     <small>Inscrit le <?php echo format_date($message->date_inscription); ?></small>
                     <small><?php echo $message->user_post_count; ?> messages</small>
