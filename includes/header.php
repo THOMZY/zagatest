@@ -14,9 +14,16 @@
 <body>
     <header class="bg-dark text-white mb-4">
         <div class="container py-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h3 mb-0"><a href="index.php" class="text-white text-decoration-none">Archives du Forum</a></h1>
-                <p class="mb-0">Forum en lecture seule</p>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                <h1 class="h3 mb-2 mb-md-0"><a href="index.php" class="text-white text-decoration-none">Archives du Forum</a></h1>
+                
+                <!-- Formulaire de recherche -->
+                <div class="d-flex">
+                    <form action="search.php" method="GET" class="d-flex">
+                        <input type="text" name="term" class="form-control form-control-sm me-2" placeholder="Rechercher..." aria-label="Rechercher">
+                        <button type="submit" class="btn btn-outline-light btn-sm">Rechercher</button>
+                    </form>
+                </div>
             </div>
         </div>
     </header>
