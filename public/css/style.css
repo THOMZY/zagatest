@@ -137,3 +137,10 @@ main {
         margin-top: 1rem;
     }
 }
+
+/* Style pour les smileys */
+.smiley {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 2px;
+}

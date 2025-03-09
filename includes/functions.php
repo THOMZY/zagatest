@@ -28,15 +28,69 @@ function secure_output($data) {
 }
 
 /**
+ * Convertir les codes smileys (:nom:) en images
+ * 
+ * @param string $text Le texte avec les codes smileys
+ * @return string Le texte avec les images des smileys
+ */
+function convert_smileys($text) {
+    // Regex pour trouver tous les smileys au format :nom:
+    preg_match_all('/:([a-zA-Z0-9_-]+):/', $text, $matches);
+    
+    if (!empty($matches[1])) {
+        // Extensions d'images à vérifier
+        $extensions = ['gif', 'png', 'jpg', 'jpeg', 'webp'];
+        $smileys_dir = 'public/img/smileys/';
+        
+        foreach ($matches[1] as $index => $smiley_name) {
+            $smiley_code = $matches[0][$index]; // Le code complet :nom:
+            $smiley_found = false;
+            
+            // Vérifier chaque extension possible
+            foreach ($extensions as $ext) {
+                $smiley_path = $smileys_dir . $smiley_name . '.' . $ext;
+                
+                if (file_exists($smiley_path)) {
+                    // Remplacer le code par l'image du smiley
+                    $replacement = '<img src="' . $smiley_path . '" alt="' . $smiley_name . '" class="smiley">';
+                    $text = str_replace($smiley_code, $replacement, $text);
+                    $smiley_found = true;
+                    break; // Sortir de la boucle dès qu'une image est trouvée
+                }
+            }
+            
+            // Option: journaliser les smileys manquants (décommenter si besoin)
+            /*
+            if (!$smiley_found) {
+                file_put_contents(
+                    'smileys_missing.log', 
+                    date('Y-m-d H:i:s') . " - Smiley manquant: $smiley_name\n", 
+                    FILE_APPEND
+                );
+            }
+            */
+        }
+    }
+    
+    return $text;
+}
+
+/**
  * Formater le texte d'un message pour l'affichage
- * (conversion des sauts de ligne, etc.)
+ * (conversion des sauts de ligne, smileys, etc.)
  * 
  * @param string $text Le texte à formater
  * @return string Le texte formaté
  */
 function format_message($text) {
+    // Sécuriser le texte
+    $text = secure_output($text);
+    
+    // Convertir les smileys avant de traiter les sauts de ligne
+    $text = convert_smileys($text);
+    
     // Convertir les sauts de ligne en balises <br>
-    $text = nl2br(secure_output($text));
+    $text = nl2br($text);
     
     // Vous pourriez ajouter d'autres formatages ici (BBCode, Markdown, etc.)
     
