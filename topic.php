@@ -154,37 +154,37 @@ include 'includes/header.php';
 
 <!-- Liste des messages -->
 <?php while ($message = $messages_query->fetch()): ?>
-    <div id="message-<?php echo $message->id; ?>" class="message-card">
-        <div class="message-header d-flex justify-content-between align-items-center">
-            <span>
-                Message #<?php echo $message->id; ?> - 
-                <strong><?php echo format_date($message->time); ?></strong>
-            </span>
-            <a href="#message-<?php echo $message->id; ?>" class="btn btn-sm btn-outline-secondary message-link">Lien</a>
-        </div>
-        
-        <?php 
-        $header_path = get_header_path($message->postheader);
-        if (!empty($header_path)): 
-        ?>
-        <div class="post-header-container">
-            <img src="<?php echo $header_path; ?>" alt="Post Header" class="post-header-image img-fluid">
-        </div>
-        <?php endif; ?>
-        
-        <div class="row message-layout g-0">
-            <div class="col-md-2">
-                <div class="user-info h-100" data-username-initial="<?php echo strtoupper(substr($message->user_name, 0, 1)); ?>">
-                    <img src="<?php echo get_avatar_path($message->avatar); ?>" alt="Avatar" class="user-avatar">
-                    <h5 class="h6 mb-1"><?php echo secure_output($message->user_name); ?></h5>
-                    <small>Inscrit le <?php echo format_date($message->date_inscription); ?></small>
-                    <small><?php echo $message->user_post_count; ?> messages</small>
+    <div id="message-<?php echo $message->id; ?>" class="message-card mb-4">
+        <div class="message-outer-container">
+            <!-- Avatar à gauche -->
+            <div class="avatar-container">
+                <img src="<?php echo get_avatar_path($message->avatar); ?>" alt="Avatar de <?php echo secure_output($message->user_name); ?>" class="user-avatar-img">
+            </div>
+            
+            <!-- Header avec informations utilisateur -->
+            <?php 
+            $header_path = get_header_path($message->postheader);
+            $hasCustomHeader = !empty($header_path);
+            ?>
+            
+            <div class="header-container <?php echo $hasCustomHeader ? 'has-custom-background' : ''; ?>">
+                <?php if ($hasCustomHeader): ?>
+                <img src="<?php echo $header_path; ?>" alt="Background" class="header-background">
+                <?php endif; ?>
+                
+                <div class="header-content">
+                    <div class="user-info-header">
+                        <div class="username"><?php echo secure_output($message->user_name); ?></div>
+                        <div class="user-details">
+                            Points: <?php echo $message->user_post_count; ?> | Messages: <?php echo $message->user_post_count; ?> | <?php echo format_date($message->time); ?>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-10">
-                <div class="message-content h-100">
-                    <?php echo format_message($message->message); ?>
-                </div>
+            
+            <!-- Contenu du message -->
+            <div class="message-body">
+                <?php echo format_message($message->message); ?>
             </div>
         </div>
     </div>
