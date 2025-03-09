@@ -262,6 +262,50 @@ header a.text-white {
     font-style: italic;
 }
 
+/* Style pour les spoilers (contenu caché) */
+.spoiler-container {
+    margin: 15px 0;
+    background-color: #1e1e1e;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #333;
+}
+
+.spoiler-button {
+    width: 100%;
+    text-align: left;
+    background-color: #283593;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 0.9rem;
+}
+
+.spoiler-button:hover {
+    background-color: #1a237e;
+}
+
+.spoiler-content {
+    padding: 15px;
+    border-top: 1px solid #333;
+    background-color: #262626;
+}
+
+.spoiler-content.hidden {
+    display: none;
+}
+
+/* Animation pour l'affichage du contenu */
+.spoiler-content.showing {
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 
 /* Header */
 .header-container {

@@ -76,6 +76,44 @@ function convert_smileys($text) {
 }
 
 /**
+ * Traite récursivement les balises cacher imbriquées
+ * 
+ * @param string $text Le texte contenant les balises cacher
+ * @return string Le texte avec les balises cacher converties en HTML
+ */
+function process_spoilers($text) {
+    static $spoiler_count = 0;
+    
+    // Fonction pour traiter une balise cacher
+    $callback = function($matches) use (&$spoiler_count) {
+        $content = $matches[1];
+        $spoiler_id = 'spoiler-' . $spoiler_count++;
+        
+        // Traiter récursivement le contenu (pour les balises imbriquées)
+        $content = process_spoilers($content);
+        
+        return '<div class="spoiler-container">
+                  <button class="spoiler-button" onclick="toggleSpoiler(\'' . $spoiler_id . '\')">▶ Afficher le contenu caché</button>
+                  <div id="' . $spoiler_id . '" class="spoiler-content hidden">
+                    ' . $content . '
+                  </div>
+                </div>';
+    };
+    
+    // Trouve la balise cacher la plus externe et la remplace
+    $pattern = '/\[cacher\](.*?)\[\/cacher\]/is';
+    $text = preg_replace_callback($pattern, $callback, $text);
+    
+    // Vérifie s'il reste encore des balises cacher (si c'est le cas, il y avait des imbrications)
+    if (strpos($text, '[cacher]') !== false && strpos($text, '[/cacher]') !== false) {
+        // Appel récursif pour traiter les balises restantes
+        $text = process_spoilers($text);
+    }
+    
+    return $text;
+}
+
+/**
  * Convertir les codes BBCode en HTML
  * 
  * @param string $text Le texte avec les codes BBCode
@@ -87,6 +125,9 @@ function convert_bbcode($text) {
     $replacement_custom_cite = '<div class="custom-citation"><div class="citation-author">Citation de <strong>$1</strong> :</div><div class="citation-content">$2</div></div>';
     $text = preg_replace($pattern_custom_cite, $replacement_custom_cite, $text);
     
+    // Traitement récursif des balises cacher (spoilers) imbriquées
+    $text = process_spoilers($text);
+    
     // BBCode de formatage de texte
     $bbcode_patterns = [
         '/\[b\](.*?)\[\/b\]/is',                  // Gras
@@ -94,7 +135,7 @@ function convert_bbcode($text) {
         '/\[u\](.*?)\[\/u\]/is',                  // Souligné
         '/\[s\](.*?)\[\/s\]/is',                  // Barré
         '/\[size=([1-7])\](.*?)\[\/size\]/is',    // Taille de texte
-        '/\[color=([#a-zA-Z0-9]+)\](.*?)\[\/color\]/is', // Couleur
+        '/\[couleur=([#a-zA-Z0-9]+)\](.*?)\[\/couleur\]/is', // Couleur
         '/\[center\](.*?)\[\/center\]/is',        // Centré
         '/\[left\](.*?)\[\/left\]/is',            // Aligné à gauche
         '/\[right\](.*?)\[\/right\]/is',          // Aligné à droite

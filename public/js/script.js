@@ -83,3 +83,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000); // Attendre 1 seconde
     }
 });
+
+// Fonction pour afficher/masquer les spoilers
+function toggleSpoiler(spoilerId) {
+    const spoilerContent = document.getElementById(spoilerId);
+    const spoilerButton = spoilerContent.previousElementSibling;
+    
+    if (spoilerContent.classList.contains('hidden')) {
+        // Afficher le contenu
+        spoilerContent.classList.remove('hidden');
+        spoilerContent.classList.add('showing');
+        spoilerButton.innerHTML = '▼ Masquer le contenu';
+    } else {
+        // Masquer le contenu
+        spoilerContent.classList.add('hidden');
+        spoilerContent.classList.remove('showing');
+        spoilerButton.innerHTML = '▶ Afficher le contenu caché';
+    }
+}
