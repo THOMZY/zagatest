@@ -29,12 +29,13 @@ function secure_output($data) {
 
 /**
  * Convertir les codes smileys (:nom:) en images
+ * Version corrigée pour prendre en compte les majuscules
  * 
  * @param string $text Le texte avec les codes smileys
  * @return string Le texte avec les images des smileys
  */
 function convert_smileys($text) {
-    // Regex pour trouver tous les smileys au format :nom:
+    // Regex modifiée pour trouver tous les smileys au format :nom: ou :NOM:
     preg_match_all('/:([a-zA-Z0-9_-]+):/', $text, $matches);
     
     if (!empty($matches[1])) {
@@ -46,7 +47,7 @@ function convert_smileys($text) {
             $smiley_code = $matches[0][$index]; // Le code complet :nom:
             $smiley_found = false;
             
-            // Vérifier chaque extension possible
+            // Essayer avec le nom exact
             foreach ($extensions as $ext) {
                 $smiley_path = $smileys_dir . $smiley_name . '.' . $ext;
                 
@@ -56,6 +57,23 @@ function convert_smileys($text) {
                     $text = str_replace($smiley_code, $replacement, $text);
                     $smiley_found = true;
                     break; // Sortir de la boucle dès qu'une image est trouvée
+                }
+            }
+            
+            // Si non trouvé, essayer avec le nom en minuscules
+            if (!$smiley_found) {
+                $smiley_name_lower = strtolower($smiley_name);
+                
+                foreach ($extensions as $ext) {
+                    $smiley_path = $smileys_dir . $smiley_name_lower . '.' . $ext;
+                    
+                    if (file_exists($smiley_path)) {
+                        // Remplacer le code par l'image du smiley
+                        $replacement = '<img src="' . $smiley_path . '" alt="' . $smiley_name . '" class="smiley">';
+                        $text = str_replace($smiley_code, $replacement, $text);
+                        $smiley_found = true;
+                        break;
+                    }
                 }
             }
             
@@ -212,7 +230,7 @@ function format_message($text) {
 }
 
 /**
- * Créer la pagination
+ * Créer la pagination - version robuste contre les caractères spéciaux
  * 
  * @param int $total_items Nombre total d'éléments
  * @param int $items_per_page Nombre d'éléments par page
@@ -229,9 +247,15 @@ function pagination($total_items, $items_per_page, $current_page, $url_pattern) 
     
     $html = '<nav aria-label="Pagination"><ul class="pagination">';
     
+    // Fonction sécurisée pour générer l'URL de pagination
+    $getPageUrl = function($page) use ($url_pattern) {
+        // Remplace toutes les occurrences de %d ou %%d par le numéro de page
+        return str_replace(['%%d', '%d'], $page, $url_pattern);
+    };
+    
     // Bouton "Précédent"
     if ($current_page > 1) {
-        $html .= '<li class="page-item"><a class="page-link" href="' . sprintf($url_pattern, $current_page - 1) . '">Précédent</a></li>';
+        $html .= '<li class="page-item"><a class="page-link" href="' . $getPageUrl($current_page - 1) . '">Précédent</a></li>';
     } else {
         $html .= '<li class="page-item disabled"><span class="page-link">Précédent</span></li>';
     }
@@ -244,13 +268,13 @@ function pagination($total_items, $items_per_page, $current_page, $url_pattern) 
         if ($i == $current_page) {
             $html .= '<li class="page-item active"><span class="page-link">' . $i . '</span></li>';
         } else {
-            $html .= '<li class="page-item"><a class="page-link" href="' . sprintf($url_pattern, $i) . '">' . $i . '</a></li>';
+            $html .= '<li class="page-item"><a class="page-link" href="' . $getPageUrl($i) . '">' . $i . '</a></li>';
         }
     }
     
     // Bouton "Suivant"
     if ($current_page < $total_pages) {
-        $html .= '<li class="page-item"><a class="page-link" href="' . sprintf($url_pattern, $current_page + 1) . '">Suivant</a></li>';
+        $html .= '<li class="page-item"><a class="page-link" href="' . $getPageUrl($current_page + 1) . '">Suivant</a></li>';
     } else {
         $html .= '<li class="page-item disabled"><span class="page-link">Suivant</span></li>';
     }

@@ -172,26 +172,26 @@ include 'includes/header.php';
                 <div class="list-group">
                     <?php foreach ($results as $result): ?>
                         <a href="topic.php?id=<?php echo $result->id; ?>" class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1"><?php echo secure_output($result->title); ?></h5>
-                                <small class="text-muted"><?php echo format_date($result->date); ?></small>
-                            </div>
-                            <p class="mb-1">
-                                <small>
-                                    par <strong><?php echo secure_output($result->author); ?></strong> 
-                                    dans <a href="forum.php?id=<?php echo $result->forum_id; ?>"><?php echo secure_output($result->forum_name); ?></a>
-                                    - <?php echo $result->reply_count; ?> réponse(s)
-                                </small>
-                            </p>
-                        </a>
+							<div class="d-flex w-100 justify-content-between">
+								<h5 class="mb-1"><?php echo convert_smileys(secure_output($result->title)); ?></h5>
+								<small class="text-muted"><?php echo format_date($result->date); ?></small>
+							</div>
+							<p class="mb-1">
+								<small>
+									par <strong><?php echo secure_output($result->author); ?></strong> 
+									dans <a href="forum.php?id=<?php echo $result->forum_id; ?>"><?php echo secure_output($result->forum_name); ?></a>
+									- <?php echo $result->reply_count; ?> réponse(s)
+								</small>
+							</p>
+						</a>
                     <?php endforeach; ?>
                 </div>
                 
                 <!-- Pagination -->
-                <?php 
-                $pagination_url = "search.php?term=" . urlencode($search_term) . "&type=" . urlencode($search_type) . "&page=%d";
-                echo pagination($total_results, $results_per_page, $current_page, $pagination_url); 
-                ?>
+				<?php 
+				$pagination_url = "search.php?term=" . urlencode($search_term) . "&type=" . urlencode($search_type) . "&page=%%d";
+				echo pagination($total_results, $results_per_page, $current_page, $pagination_url); 
+				?>
             <?php else: ?>
                 <div class="alert alert-warning">
                     Aucun résultat trouvé pour votre recherche.

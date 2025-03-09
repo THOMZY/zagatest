@@ -5,17 +5,15 @@
 
 ### Fonctionnalités visuels
 
-- **Smileys majuscules** : Si mot :MAJUSCULE:, smiley pas détété.
 - **Meilleur Header** : Améliorer l'en-tête utilisateur avec date d'inscription, nombre de messages, etc... banniere de base manquante
 - **Signatures** : Remettre les signatures des utilisateurs.
-- **Balises** : Intégrer des balises pour formater les messages.
 - **Listes Smileys** : Voir liste des smileys par catégories.
 - **Stats forums** : Afficher quelques parts les stats entieres du forum.
 - **Options** : Permettre de ON/OFF certaines fonctions.
 
 
-### Gestion des Images
-
+### Gestion des liens
+- **Gérer les anciens liens interne** : Ancien lien topic externe, redirection interne ( modifier BDD )
 - **Gérer les Images Upload Internes** : Ancien systeme d'upload interne, ancien lien de la free a modifier BDD MYSQL, ( balises ? )
 - **Gérer les Images Externes** : Autoriser certaines images externes avec et sans les balises spécifiques.
 

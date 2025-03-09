@@ -576,3 +576,50 @@ footer {
   background-color: #455a64 !important;
   color: white !important;
 }
+
+/* Améliorer la visibilité du texte dans les champs de formulaire */
+.form-control::placeholder, 
+.form-select::placeholder {
+    color: #aaa;
+}
+
+.form-control, 
+.form-select, 
+input[type="text"], 
+select {
+    color: #e0e0e0 !important; /* Forcer la couleur du texte en clair */
+}
+
+/* Correction pour les résultats de recherche */
+.list-group-item-action h5 {
+    color: #f5f5f5; /* Titre plus visible */
+}
+
+.list-group-item-action p, 
+.list-group-item-action small {
+    color: #bbb !important; /* Texte secondaire plus visible */
+}
+
+.list-group-item-action small strong {
+    color: #64b5f6 !important; /* Nom d'auteur en bleu clair */
+}
+
+/* Correction pour la visibilité dans la page search.php */
+.alert-info strong {
+    color: #ffffff; /* Texte en blanc dans les alertes */
+}
+
+/* S'assurer que les smileys s'affichent */
+.smiley {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 2px;
+    max-height: 24px; /* Limiter la hauteur */
+}
+
+/* S'assurer que le bouton de recherche est bien visible */
+.btn-primary {
+    background-color: #1976d2 !important;
+    border-color: #1976d2 !important;
+    color: white !important;
+}
