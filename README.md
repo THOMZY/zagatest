@@ -5,8 +5,7 @@
 
 ### Fonctionnalités visuels
 
-- **Lien Message** : C'était la, puis c'est cassé, mais faut aller dormir aussi...
-- **Background / Thème** : Apparance de base, ça pique les yeux.
+- **Smileys majuscules** : Si mot :MAJUSCULE:, smiley pas détété.
 - **Meilleur Header** : Améliorer l'en-tête utilisateur avec date d'inscription, nombre de messages, etc... banniere de base manquante
 - **Signatures** : Remettre les signatures des utilisateurs.
 - **Balises** : Intégrer des balises pour formater les messages.
@@ -30,6 +29,6 @@
 
 ### Contenu Fun
 
-- **Pages Fun** : Créer des pages divertissantes comme une fresque de bars ou des avatars, smileys...
+- **Pages Fun** : Créer des pages fun comme une fresque/pluie/trucs chelou de banniere ou avatars, smileys...
 
 ---

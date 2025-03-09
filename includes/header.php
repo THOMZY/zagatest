@@ -12,7 +12,7 @@
     <link href="public/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <header class="bg-dark text-white mb-4">
+    <header class="text-white mb-4">
         <div class="container py-3">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
                 <h1 class="h3 mb-2 mb-md-0"><a href="index.php" class="text-white text-decoration-none">Archives du Forum</a></h1>
