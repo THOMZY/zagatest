@@ -107,7 +107,14 @@ include 'includes/header.php';
                 <a href="topic.php?id=<?php echo $topic->id; ?>" class="list-group-item list-group-item-action topic-card">
                     <div class="row align-items-center">
                         <div class="col-md-7">
-                            <h4 class="h6 mb-1"><?php echo secure_output($topic->titre); ?></h4>
+                            <h4 class="h6 mb-1">
+                                <?php 
+                                // Sécuriser d'abord le titre
+                                $titre_securise = secure_output($topic->titre);
+                                // Puis convertir les smileys
+                                echo convert_smileys($titre_securise); 
+                                ?>
+                            </h4>
                             <p class="text-muted small mb-0">
                                 Par <?php echo secure_output($topic->user_name); ?>
                             </p>
