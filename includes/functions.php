@@ -76,6 +76,78 @@ function convert_smileys($text) {
 }
 
 /**
+ * Convertir les codes BBCode en HTML
+ * 
+ * @param string $text Le texte avec les codes BBCode
+ * @return string Le texte avec le BBCode converti en HTML
+ */
+function convert_bbcode($text) {
+    // Traitement spécial pour le format de citation personnalisé [b]Citation de USER[/b] : [citer]texte[/citer]
+    $pattern_custom_cite = '/\[b\]Citation de ([^[]+)\[\/b\] : \[citer\](.*?)\[\/citer\]/is';
+    $replacement_custom_cite = '<div class="custom-citation"><div class="citation-author">Citation de <strong>$1</strong> :</div><div class="citation-content">$2</div></div>';
+    $text = preg_replace($pattern_custom_cite, $replacement_custom_cite, $text);
+    
+    // BBCode de formatage de texte
+    $bbcode_patterns = [
+        '/\[b\](.*?)\[\/b\]/is',                  // Gras
+        '/\[i\](.*?)\[\/i\]/is',                  // Italique
+        '/\[u\](.*?)\[\/u\]/is',                  // Souligné
+        '/\[s\](.*?)\[\/s\]/is',                  // Barré
+        '/\[size=([1-7])\](.*?)\[\/size\]/is',    // Taille de texte
+        '/\[color=([#a-zA-Z0-9]+)\](.*?)\[\/color\]/is', // Couleur
+        '/\[center\](.*?)\[\/center\]/is',        // Centré
+        '/\[left\](.*?)\[\/left\]/is',            // Aligné à gauche
+        '/\[right\](.*?)\[\/right\]/is',          // Aligné à droite
+        '/\[quote\](.*?)\[\/quote\]/is',          // Citation simple
+        '/\[quote=(.*?)\](.*?)\[\/quote\]/is',    // Citation avec auteur
+        '/\[code\](.*?)\[\/code\]/is',            // Code
+        '/\[url\](.*?)\[\/url\]/is',              // Lien URL simple
+        '/\[url=(.*?)\](.*?)\[\/url\]/is',        // Lien URL avec texte
+        '/\[img\](.*?)\[\/img\]/is',              // Image
+        '/\[list\](.*?)\[\/list\]/is',            // Liste non ordonnée
+        '/\[list=1\](.*?)\[\/list\]/is',          // Liste numérotée
+        '/\[\*\](.*?)(?=\[\*\]|\[\/list\])/is',   // Élément de liste
+        '/\[email\](.*?)\[\/email\]/is',          // Email
+        '/\[email=(.*?)\](.*?)\[\/email\]/is',    // Email avec texte
+        '/\[youtube\]([a-zA-Z0-9_-]{11})\[\/youtube\]/is', // Vidéo YouTube (ID de 11 caractères)
+        '/\[citer\](.*?)\[\/citer\]/is',          // Citation simple sans auteur (pour les cas restants)
+    ];
+    
+    $html_replacements = [
+        '<strong>$1</strong>',                    // Gras
+        '<em>$1</em>',                            // Italique
+        '<span style="text-decoration: underline;">$1</span>', // Souligné
+        '<span style="text-decoration: line-through;">$1</span>', // Barré
+        '<span style="font-size: $1em;">$2</span>', // Taille de texte
+        '<span style="color: $1;">$2</span>',     // Couleur
+        '<div style="text-align: center;">$1</div>', // Centré
+        '<div style="text-align: left;">$1</div>', // Aligné à gauche
+        '<div style="text-align: right;">$1</div>', // Aligné à droite
+        '<blockquote class="blockquote">$1</blockquote>', // Citation simple
+        '<blockquote class="blockquote"><p>$2</p><footer class="blockquote-footer">$1</footer></blockquote>', // Citation avec auteur
+        '<pre><code>$1</code></pre>',             // Code
+        '<a href="$1" target="_blank">$1</a>',    // Lien URL simple
+        '<a href="$1" target="_blank">$2</a>',    // Lien URL avec texte
+        '<img src="$1" class="img-fluid" alt="Image" />', // Image
+        '<ul>$1</ul>',                            // Liste non ordonnée
+        '<ol>$1</ol>',                            // Liste numérotée
+        '<li>$1</li>',                            // Élément de liste
+        '<a href="mailto:$1">$1</a>',             // Email
+        '<a href="mailto:$1">$2</a>',             // Email avec texte
+        '<div class="ratio ratio-16x9 mb-3"><iframe src="https://www.youtube.com/embed/$1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>', // YouTube embed
+        '<div class="simple-citation">$1</div>',  // Citation simple sans auteur
+    ];
+    
+    // Appliquer les remplacements
+    $text = preg_replace($bbcode_patterns, $html_replacements, $text);
+    
+    // Gestion particulière pour les sauts de ligne à l'intérieur des listes
+    $text = str_replace("\n[*]", "[*]", $text);
+    
+    return $text;
+}
+
+/**
  * Formater le texte d'un message pour l'affichage
  * (conversion des sauts de ligne, smileys, etc.)
  * 
@@ -86,13 +158,14 @@ function format_message($text) {
     // Sécuriser le texte
     $text = secure_output($text);
     
+    // Convertir le BBCode en HTML
+    $text = convert_bbcode($text);
+    
     // Convertir les smileys avant de traiter les sauts de ligne
     $text = convert_smileys($text);
     
     // Convertir les sauts de ligne en balises <br>
     $text = nl2br($text);
-    
-    // Vous pourriez ajouter d'autres formatages ici (BBCode, Markdown, etc.)
     
     return $text;
 }
