@@ -5,8 +5,9 @@
 
 ### Fonctionnalités visuels
 
+- **Lien Message** : C'était la, puis c'est cassé, mais faut aller dormir aussi...
 - **Background / Thème** : Apparance de base, ça pique les yeux.
-- **Meilleur Header** : Améliorer l'en-tête utilisateur avec date d'inscription, nombre de messages, etc.
+- **Meilleur Header** : Améliorer l'en-tête utilisateur avec date d'inscription, nombre de messages, etc... banniere de base manquante
 - **Signatures** : Remettre les signatures des utilisateurs.
 - **Balises** : Intégrer des balises pour formater les messages.
 - **Listes Smileys** : Voir liste des smileys par catégories.
