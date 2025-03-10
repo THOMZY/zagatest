@@ -85,25 +85,27 @@ function convert_urls($text) {
     // Regex pour trouver les URLs, en excluant celles qui font déjà partie d'un lien ou d'une balise img
     $pattern = '~(?<!href=[\'"])(?<!src=[\'"])(https?://[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:/[^\s<]*)?|www\.[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:/[^\s<]*)?)~i';
     
-    // Remplacer les URLs par des liens, en évitant les URLs d'images
+    // Remplacer les URLs par des liens ou des images
     return preg_replace_callback($pattern, function($matches) {
         $url = $matches[0];
         
-        // Éviter de convertir les URLs qui ressemblent à des images
-        $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
-        $path_info = pathinfo(strtolower($url));
-        
-        if (isset($path_info['extension']) && in_array($path_info['extension'], $image_extensions)) {
-            return $url; // Ne pas convertir les URLs d'images en liens
-        }
-        
-        // Ajouter http:// si l'URL commence par www.
+        // Ajouter http:// si l'URL ne commence pas par http
         if (strpos($url, 'http') !== 0) {
             $full_url = 'http://' . $url;
         } else {
             $full_url = $url;
         }
         
+        // Vérifier si c'est une URL d'image
+        $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        $path_info = pathinfo(strtolower($url));
+        
+        // Si c'est une image, retourner une balise img
+        if (isset($path_info['extension']) && in_array($path_info['extension'], $image_extensions)) {
+            return '<img src="' . $full_url . '" class="img-fluid" alt="Image">';
+        }
+        
+        // Sinon, retourner un lien
         return '<a href="' . $full_url . '" target="_blank">' . $url . '</a>';
     }, $text);
 }
@@ -117,13 +119,20 @@ function convert_urls($text) {
 function process_nested_bbcode($text) {
     static $spoiler_count = 0;
     
-    // Traiter d'abord les balises [img] pour éviter les conflits
-    $img_pattern = '/\[img\](.*?)\[\/img\]/is';
-    if (preg_match($img_pattern, $text)) {
-        $text = preg_replace_callback($img_pattern, function($matches) {
-            return '<img src="' . $matches[1] . '" class="img-fluid" alt="Image">';
-        }, $text);
+// Traiter d'abord les balises [img] pour éviter les conflits
+while (preg_match('/\[img\](.*?)\[\/img\]/is', $text, $matches)) {
+    $url = $matches[1];
+    
+    // S'assurer que l'URL a le bon format (ajouter http:// si nécessaire)
+    if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
+        $url = 'http://' . $url;
     }
+    
+    $replacement = '<img src="' . $url . '" class="img-fluid" alt="Image">';
+    
+    // Remplacer uniquement la première occurrence
+    $text = preg_replace('/\[img\]' . preg_quote($matches[1], '/') . '\[\/img\]/is', $replacement, $text, 1);
+}
     
     // Balise [youtube]
     $youtube_pattern = '/\[youtube\]([a-zA-Z0-9_-]{11})\[\/youtube\]/is';
@@ -142,28 +151,29 @@ function process_nested_bbcode($text) {
         }, $text);
     }
     
-    // Balise [cacher] (spoiler)
-    $spoiler_pattern = '/\[cacher\](.*?)\[\/cacher\]/is';
-    if (preg_match($spoiler_pattern, $text)) {
-        $text = preg_replace_callback($spoiler_pattern, function($matches) use (&$spoiler_count) {
-            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-            $spoiler_id = 'spoiler-' . $spoiler_count++;
-            
-            return '<div class="spoiler-container">
-                      <button class="spoiler-button" onclick="toggleSpoiler(\'' . $spoiler_id . '\')">▶ Afficher le contenu caché</button>
-                      <div id="' . $spoiler_id . '" class="spoiler-content hidden">' . $content . '</div>
-                    </div>';
-        }, $text);
-    }
+// Balise [cacher] (spoiler)
+while (preg_match('/\[cacher\](.*?)\[\/cacher\]/is', $text, $matches)) {
+    // Traiter récursivement le contenu pour gérer les balises imbriquées à l'intérieur
+    $content = process_nested_bbcode($matches[1]);
+    $spoiler_id = 'spoiler-' . $spoiler_count++;
+    
+    $replacement = '<div class="spoiler-container">
+                  <button class="spoiler-button" onclick="toggleSpoiler(\'' . $spoiler_id . '\')">▶ Afficher le contenu caché</button>
+                  <div id="' . $spoiler_id . '" class="spoiler-content hidden">' . $content . '</div>
+                </div>';
+    
+    // Remplacer seulement la première occurrence pour éviter les problèmes d'imbrication
+    $text = preg_replace('/\[cacher\]' . preg_quote($matches[1], '/') . '\[\/cacher\]/is', $replacement, $text, 1);
+}
     
     // Balise [citer] (citation)
-    $cite_pattern = '/\[citer\](.*?)\[\/citer\]/is';
-    if (preg_match($cite_pattern, $text)) {
-        $text = preg_replace_callback($cite_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-            return '<div class="simple-citation">' . $content . '</div>';
-        }, $text);
-    }
+		while (preg_match('/\[citer\](.*?)\[\/citer\]/is', $text, $matches)) {
+			$content = process_nested_bbcode($matches[1]); // Traiter récursivement
+			$replacement = '<div class="simple-citation">' . $content . '</div>';
+    
+    // Remplacer seulement la première occurrence pour éviter les problèmes d'imbrication
+	$text = preg_replace('/\[citer\]' . preg_quote($matches[1], '/') . '\[\/citer\]/is', $replacement, $text, 1);
+}
     
     // Balise [center]
     $center_pattern = '/\[center\](.*?)\[\/center\]/is';
@@ -366,16 +376,16 @@ function convert_bbcode($text) {
  * @return string Le texte formaté
  */
 function format_message($text) {
-    // Sécuriser le texte
-    $text = secure_output($text);
+    // Sécuriser le texte d'abord mais en préservant les balises BBCode
+    $text = str_replace(['<', '>'], ['&lt;', '&gt;'], $text);
     
-    // Convertir le BBCode en HTML
+    // Convertir le BBCode en HTML maintenant que les autres balises HTML sont sécurisées
     $text = convert_bbcode($text);
     
-    // Convertir les smileys avant de traiter les sauts de ligne
+    // Convertir les smileys
     $text = convert_smileys($text);
     
-    // Convertir les URLs brutes en liens cliquables
+    // Convertir les URLs brutes en liens cliquables ou images
     $text = convert_urls($text);
     
     // Convertir les sauts de ligne en balises <br>
