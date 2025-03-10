@@ -293,22 +293,39 @@ while (preg_match('/\[cacher\](.*?)\[\/cacher\]/is', $text, $matches)) {
         }, $text);
     }
     
-    // Balise [url] avec texte
-    $url_text_pattern = '/\[url=(.*?)\](.*?)\[\/url\]/is';
-    if (preg_match($url_text_pattern, $text)) {
-        $text = preg_replace_callback($url_text_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
-            return '<a href="' . $matches[1] . '" target="_blank">' . $content . '</a>';
-        }, $text);
+	// Balise [url] avec texte - modification avec une approche différente
+while (preg_match('/\[url=(.*?)\](.*?)\[\/url\]/is', $text, $matches)) {
+    $url = $matches[1];
+    $link_text = $matches[2];
+    
+    // Traiter récursivement le contenu
+    $link_text = process_nested_bbcode($link_text);
+    
+    // S'assurer que l'URL a le bon format
+    if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
+        $url = 'http://' . $url;
     }
     
-    // Balise [url] simple
-    $url_pattern = '/\[url\](.*?)\[\/url\]/is';
-    if (preg_match($url_pattern, $text)) {
-        $text = preg_replace_callback($url_pattern, function($matches) {
-            return '<a href="' . $matches[1] . '" target="_blank">' . $matches[1] . '</a>';
-        }, $text);
+    $replacement = '<a href="' . $url . '" target="_blank">' . $link_text . '</a>';
+    
+    // Utilisation de str_replace au lieu de preg_replace pour éviter les problèmes d'échappement
+    $text = str_replace($matches[0], $replacement, $text);
+}
+
+// Balise [url] simple - modification avec une approche différente
+while (preg_match('/\[url\](.*?)\[\/url\]/is', $text, $matches)) {
+    $url = $matches[1];
+    
+    // S'assurer que l'URL a le bon format
+    if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
+        $url = 'http://' . $url;
     }
+    
+    $replacement = '<a href="' . $url . '" target="_blank">' . $url . '</a>';
+    
+    // Utilisation de str_replace au lieu de preg_replace pour éviter les problèmes d'échappement
+    $text = str_replace($matches[0], $replacement, $text);
+}
     
     // Balise [email] avec texte
     $email_text_pattern = '/\[email=(.*?)\](.*?)\[\/email\]/is';
@@ -359,13 +376,89 @@ while (preg_match('/\[cacher\](.*?)\[\/cacher\]/is', $text, $matches)) {
 }
 
 /**
+ * Convertir uniquement les URLs d'images en balises img
+ * 
+ * @param string $text Le texte contenant des URLs d'images
+ * @return string Le texte avec les URLs d'images converties en balises img
+ */
+function convert_image_urls($text) {
+    // Regex pour trouver les URLs d'images, en excluant celles qui font déjà partie d'une balise img ou d'un lien
+    $pattern = '~(?<!href=[\'"])(?<!src=[\'"])(https?://[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:/[^\s<]*)?|www\.[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:/[^\s<]*)?)~i';
+    
+    // Remplacer uniquement les URLs qui pointent vers des images
+    return preg_replace_callback($pattern, function($matches) {
+        $url = $matches[0];
+        
+        // Ajouter http:// si l'URL ne commence pas par http
+        if (strpos($url, 'http') !== 0) {
+            $full_url = 'http://' . $url;
+        } else {
+            $full_url = $url;
+        }
+        
+        // Vérifier si c'est une URL d'image
+        $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        $path_info = pathinfo(strtolower($url));
+        
+        // Si c'est une image, retourner une balise img
+        if (isset($path_info['extension']) && in_array($path_info['extension'], $image_extensions)) {
+            return '<img src="' . $full_url . '" class="img-fluid" alt="Image">';
+        }
+        
+        // Si ce n'est pas une image, laisser l'URL telle quelle
+        return $url;
+    }, $text);
+}
+
+/**
  * Fonction principale pour convertir le BBCode en HTML
  * 
  * @param string $text Le texte avec les codes BBCode
  * @return string Le texte avec le BBCode converti en HTML
  */
 function convert_bbcode($text) {
-    // Utiliser la fonction récursive pour traiter les imbrications
+    // Traiter d'abord les balises [url] pour éviter les interférences
+    
+    // Balise [url] avec texte personnalisé
+    $text = preg_replace_callback(
+        '/\[url=(.*?)\](.*?)\[\/url\]/is',
+        function($matches) {
+            $url = $matches[1];
+            if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
+                $url = 'http://' . $url;
+            }
+            return '<a href="' . $url . '" target="_blank">' . $matches[2] . '</a>';
+        },
+        $text
+    );
+    
+    // Balise [url] simple
+    $text = preg_replace_callback(
+        '/\[url\](.*?)\[\/url\]/is',
+        function($matches) {
+            $url = $matches[1];
+            if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
+                $url = 'http://' . $url;
+            }
+            return '<a href="' . $url . '" target="_blank">' . $url . '</a>';
+        },
+        $text
+    );
+    
+    // Traiter les balises [img] avant le reste du BBCode
+    $text = preg_replace_callback(
+        '/\[img\](.*?)\[\/img\]/is',
+        function($matches) {
+            $url = $matches[1];
+            if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
+                $url = 'http://' . $url;
+            }
+            return '<span class="img-frame">' . $url . '</span>';
+        },
+        $text
+    );
+    
+    // Utiliser la fonction récursive pour le reste des balises
     return process_nested_bbcode($text);
 }
 
@@ -386,8 +479,8 @@ function format_message($text) {
     // Convertir les smileys
     $text = convert_smileys($text);
     
-    // Convertir les URLs brutes en liens cliquables ou images
-    $text = convert_urls($text);
+    // Convertir uniquement les URLs d'images (pas les autres URLs)
+    $text = convert_image_urls($text);
     
     // Convertir les sauts de ligne en balises <br>
     $text = nl2br($text);
