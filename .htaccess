@@ -1,0 +1,17 @@
+# Activer le moteur de réécriture
+RewriteEngine On
+
+# Redirection pour les anciens liens de topics (avec gestion prioritaire des ancres)
+# Format: /forums/topic-XXXXXX-1-nom-du-topic.html
+# Vers: /topic.php?id=XXXXXX
+RewriteRule ^forums/topic-([0-9]+)-[0-9]+-.*\.html$ /topic.php?id=$1 [R=301,L]
+
+# Redirection pour les anciens liens vers les forums
+# Format: /forums/forum-XXXXXX-1.html
+# Vers: /forum.php?id=XXXXXX
+RewriteRule ^forums/forum-([0-9]+)-[0-9]+\.html$ /forum.php?id=$1 [R=301,L]
+
+# Pour les fichiers et dossiers qui existent réellement, ne pas appliquer de règles
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]

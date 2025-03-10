@@ -12,12 +12,6 @@
 - **Options** : Permettre de ON/OFF certaines fonctions.
 
 
-### Gestion des liens
-- **Gérer les anciens liens interne** : Ancien lien topic externe, redirection interne ( modifier BDD )
-- **Gérer les Images Upload Internes** : Ancien systeme d'upload interne, ancien lien de la free a modifier BDD MYSQL, ( balises ? )
-- **Gérer les Images Externes** : Autoriser certaines images externes avec et sans les balises spécifiques.
-
-
 ### Sécurité et Authentification
 
 - **Secret Accès** : Mettre en place un système de secret pour accéder au forum. ( personne ne doit le voir sauf si permis )

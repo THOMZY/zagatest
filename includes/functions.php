@@ -29,13 +29,12 @@ function secure_output($data) {
 
 /**
  * Convertir les codes smileys (:nom:) en images
- * Version corrigée pour prendre en compte les majuscules
  * 
  * @param string $text Le texte avec les codes smileys
  * @return string Le texte avec les images des smileys
  */
 function convert_smileys($text) {
-    // Regex modifiée pour trouver tous les smileys au format :nom: ou :NOM:
+    // Regex pour trouver tous les smileys au format :nom:
     preg_match_all('/:([a-zA-Z0-9_-]+):/', $text, $matches);
     
     if (!empty($matches[1])) {
@@ -47,7 +46,7 @@ function convert_smileys($text) {
             $smiley_code = $matches[0][$index]; // Le code complet :nom:
             $smiley_found = false;
             
-            // Essayer avec le nom exact
+            // Vérifier chaque extension possible
             foreach ($extensions as $ext) {
                 $smiley_path = $smileys_dir . $smiley_name . '.' . $ext;
                 
@@ -57,23 +56,6 @@ function convert_smileys($text) {
                     $text = str_replace($smiley_code, $replacement, $text);
                     $smiley_found = true;
                     break; // Sortir de la boucle dès qu'une image est trouvée
-                }
-            }
-            
-            // Si non trouvé, essayer avec le nom en minuscules
-            if (!$smiley_found) {
-                $smiley_name_lower = strtolower($smiley_name);
-                
-                foreach ($extensions as $ext) {
-                    $smiley_path = $smileys_dir . $smiley_name_lower . '.' . $ext;
-                    
-                    if (file_exists($smiley_path)) {
-                        // Remplacer le code par l'image du smiley
-                        $replacement = '<img src="' . $smiley_path . '" alt="' . $smiley_name . '" class="smiley">';
-                        $text = str_replace($smiley_code, $replacement, $text);
-                        $smiley_found = true;
-                        break;
-                    }
                 }
             }
             
@@ -94,116 +76,286 @@ function convert_smileys($text) {
 }
 
 /**
- * Traite récursivement les balises cacher imbriquées
+ * Convertir les URLs brutes en liens cliquables
  * 
- * @param string $text Le texte contenant les balises cacher
- * @return string Le texte avec les balises cacher converties en HTML
+ * @param string $text Le texte contenant des URLs
+ * @return string Le texte avec les URLs converties en liens
  */
-function process_spoilers($text) {
+function convert_urls($text) {
+    // Regex pour trouver les URLs, en excluant celles qui font déjà partie d'un lien ou d'une balise img
+    $pattern = '~(?<!href=[\'"])(?<!src=[\'"])(https?://[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:/[^\s<]*)?|www\.[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:/[^\s<]*)?)~i';
+    
+    // Remplacer les URLs par des liens, en évitant les URLs d'images
+    return preg_replace_callback($pattern, function($matches) {
+        $url = $matches[0];
+        
+        // Éviter de convertir les URLs qui ressemblent à des images
+        $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        $path_info = pathinfo(strtolower($url));
+        
+        if (isset($path_info['extension']) && in_array($path_info['extension'], $image_extensions)) {
+            return $url; // Ne pas convertir les URLs d'images en liens
+        }
+        
+        // Ajouter http:// si l'URL commence par www.
+        if (strpos($url, 'http') !== 0) {
+            $full_url = 'http://' . $url;
+        } else {
+            $full_url = $url;
+        }
+        
+        return '<a href="' . $full_url . '" target="_blank">' . $url . '</a>';
+    }, $text);
+}
+
+/**
+ * Fonction récursive pour traiter correctement les balises BBCode imbriquées
+ * 
+ * @param string $text Le texte avec les balises BBCode
+ * @return string Le texte avec les balises converties en HTML
+ */
+function process_nested_bbcode($text) {
     static $spoiler_count = 0;
     
-    // Fonction pour traiter une balise cacher
-    $callback = function($matches) use (&$spoiler_count) {
-        $content = $matches[1];
-        $spoiler_id = 'spoiler-' . $spoiler_count++;
-        
-        // Traiter récursivement le contenu (pour les balises imbriquées)
-        $content = process_spoilers($content);
-        
-        return '<div class="spoiler-container">
-                  <button class="spoiler-button" onclick="toggleSpoiler(\'' . $spoiler_id . '\')">▶ Afficher le contenu caché</button>
-                  <div id="' . $spoiler_id . '" class="spoiler-content hidden">
-                    ' . $content . '
-                  </div>
-                </div>';
-    };
+    // Traiter d'abord les balises [img] pour éviter les conflits
+    $img_pattern = '/\[img\](.*?)\[\/img\]/is';
+    if (preg_match($img_pattern, $text)) {
+        $text = preg_replace_callback($img_pattern, function($matches) {
+            return '<img src="' . $matches[1] . '" class="img-fluid" alt="Image">';
+        }, $text);
+    }
     
-    // Trouve la balise cacher la plus externe et la remplace
-    $pattern = '/\[cacher\](.*?)\[\/cacher\]/is';
-    $text = preg_replace_callback($pattern, $callback, $text);
+    // Balise [youtube]
+    $youtube_pattern = '/\[youtube\]([a-zA-Z0-9_-]{11})\[\/youtube\]/is';
+    if (preg_match($youtube_pattern, $text)) {
+        $text = preg_replace_callback($youtube_pattern, function($matches) {
+            return '<div class="ratio ratio-16x9 mb-3"><iframe src="https://www.youtube.com/embed/' . $matches[1] . '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+        }, $text);
+    }
     
-    // Vérifie s'il reste encore des balises cacher (si c'est le cas, il y avait des imbrications)
-    if (strpos($text, '[cacher]') !== false && strpos($text, '[/cacher]') !== false) {
-        // Appel récursif pour traiter les balises restantes
-        $text = process_spoilers($text);
+    // Traiter ensuite le format de citation personnalisé
+    $custom_cite_pattern = '/\[b\]Citation de ([^[]+)\[\/b\] : \[citer\](.*?)\[\/citer\]/is';
+    if (preg_match($custom_cite_pattern, $text)) {
+        $text = preg_replace_callback($custom_cite_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
+            return '<div class="custom-citation"><div class="citation-author">Citation de <strong>' . $matches[1] . '</strong> :</div><div class="citation-content">' . $content . '</div></div>';
+        }, $text);
+    }
+    
+    // Balise [cacher] (spoiler)
+    $spoiler_pattern = '/\[cacher\](.*?)\[\/cacher\]/is';
+    if (preg_match($spoiler_pattern, $text)) {
+        $text = preg_replace_callback($spoiler_pattern, function($matches) use (&$spoiler_count) {
+            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+            $spoiler_id = 'spoiler-' . $spoiler_count++;
+            
+            return '<div class="spoiler-container">
+                      <button class="spoiler-button" onclick="toggleSpoiler(\'' . $spoiler_id . '\')">▶ Afficher le contenu caché</button>
+                      <div id="' . $spoiler_id . '" class="spoiler-content hidden">' . $content . '</div>
+                    </div>';
+        }, $text);
+    }
+    
+    // Balise [citer] (citation)
+    $cite_pattern = '/\[citer\](.*?)\[\/citer\]/is';
+    if (preg_match($cite_pattern, $text)) {
+        $text = preg_replace_callback($cite_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+            return '<div class="simple-citation">' . $content . '</div>';
+        }, $text);
+    }
+    
+    // Balise [center]
+    $center_pattern = '/\[center\](.*?)\[\/center\]/is';
+    if (preg_match($center_pattern, $text)) {
+        $text = preg_replace_callback($center_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+            return '<div style="text-align: center;">' . $content . '</div>';
+        }, $text);
+    }
+    
+    // Balise [left]
+    $left_pattern = '/\[left\](.*?)\[\/left\]/is';
+    if (preg_match($left_pattern, $text)) {
+        $text = preg_replace_callback($left_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+            return '<div style="text-align: left;">' . $content . '</div>';
+        }, $text);
+    }
+    
+    // Balise [right]
+    $right_pattern = '/\[right\](.*?)\[\/right\]/is';
+    if (preg_match($right_pattern, $text)) {
+        $text = preg_replace_callback($right_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+            return '<div style="text-align: right;">' . $content . '</div>';
+        }, $text);
+    }
+    
+    // Balise [couleur]
+    $color_pattern = '/\[couleur=([#a-zA-Z0-9]+)\](.*?)\[\/couleur\]/is';
+    if (preg_match($color_pattern, $text)) {
+        $text = preg_replace_callback($color_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
+            return '<span style="color: ' . $matches[1] . ';">' . $content . '</span>';
+        }, $text);
+    }
+    
+    // Balise [color] (version anglaise)
+    $color_en_pattern = '/\[color=([#a-zA-Z0-9]+)\](.*?)\[\/color\]/is';
+    if (preg_match($color_en_pattern, $text)) {
+        $text = preg_replace_callback($color_en_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
+            return '<span style="color: ' . $matches[1] . ';">' . $content . '</span>';
+        }, $text);
+    }
+    
+    // Balise [b]
+    $bold_pattern = '/\[b\](.*?)\[\/b\]/is';
+    if (preg_match($bold_pattern, $text)) {
+        $text = preg_replace_callback($bold_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+            return '<strong>' . $content . '</strong>';
+        }, $text);
+    }
+    
+    // Balise [i]
+    $italic_pattern = '/\[i\](.*?)\[\/i\]/is';
+    if (preg_match($italic_pattern, $text)) {
+        $text = preg_replace_callback($italic_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+            return '<em>' . $content . '</em>';
+        }, $text);
+    }
+    
+    // Balise [u]
+    $underline_pattern = '/\[u\](.*?)\[\/u\]/is';
+    if (preg_match($underline_pattern, $text)) {
+        $text = preg_replace_callback($underline_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+            return '<span style="text-decoration: underline;">' . $content . '</span>';
+        }, $text);
+    }
+    
+    // Balise [s]
+    $strike_pattern = '/\[s\](.*?)\[\/s\]/is';
+    if (preg_match($strike_pattern, $text)) {
+        $text = preg_replace_callback($strike_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+            return '<span style="text-decoration: line-through;">' . $content . '</span>';
+        }, $text);
+    }
+    
+    // Balise [size]
+    $size_pattern = '/\[size=([1-7])\](.*?)\[\/size\]/is';
+    if (preg_match($size_pattern, $text)) {
+        $text = preg_replace_callback($size_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
+            return '<span style="font-size: ' . $matches[1] . 'em;">' . $content . '</span>';
+        }, $text);
+    }
+    
+    // Balise [code]
+    $code_pattern = '/\[code\](.*?)\[\/code\]/is';
+    if (preg_match($code_pattern, $text)) {
+        $text = preg_replace_callback($code_pattern, function($matches) {
+            // Ne pas traiter le contenu du code
+            return '<pre><code>' . $matches[1] . '</code></pre>';
+        }, $text);
+    }
+    
+    // Balise [quote] avec auteur
+    $quote_author_pattern = '/\[quote=(.*?)\](.*?)\[\/quote\]/is';
+    if (preg_match($quote_author_pattern, $text)) {
+        $text = preg_replace_callback($quote_author_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
+            return '<blockquote class="blockquote"><p>' . $content . '</p><footer class="blockquote-footer">' . $matches[1] . '</footer></blockquote>';
+        }, $text);
+    }
+    
+    // Balise [quote] simple
+    $quote_pattern = '/\[quote\](.*?)\[\/quote\]/is';
+    if (preg_match($quote_pattern, $text)) {
+        $text = preg_replace_callback($quote_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+            return '<blockquote class="blockquote">' . $content . '</blockquote>';
+        }, $text);
+    }
+    
+    // Balise [url] avec texte
+    $url_text_pattern = '/\[url=(.*?)\](.*?)\[\/url\]/is';
+    if (preg_match($url_text_pattern, $text)) {
+        $text = preg_replace_callback($url_text_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
+            return '<a href="' . $matches[1] . '" target="_blank">' . $content . '</a>';
+        }, $text);
+    }
+    
+    // Balise [url] simple
+    $url_pattern = '/\[url\](.*?)\[\/url\]/is';
+    if (preg_match($url_pattern, $text)) {
+        $text = preg_replace_callback($url_pattern, function($matches) {
+            return '<a href="' . $matches[1] . '" target="_blank">' . $matches[1] . '</a>';
+        }, $text);
+    }
+    
+    // Balise [email] avec texte
+    $email_text_pattern = '/\[email=(.*?)\](.*?)\[\/email\]/is';
+    if (preg_match($email_text_pattern, $text)) {
+        $text = preg_replace_callback($email_text_pattern, function($matches) {
+            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
+            return '<a href="mailto:' . $matches[1] . '">' . $content . '</a>';
+        }, $text);
+    }
+    
+    // Balise [email] simple
+    $email_pattern = '/\[email\](.*?)\[\/email\]/is';
+    if (preg_match($email_pattern, $text)) {
+        $text = preg_replace_callback($email_pattern, function($matches) {
+            return '<a href="mailto:' . $matches[1] . '">' . $matches[1] . '</a>';
+        }, $text);
+    }
+    
+    // Balise [list] avec éléments
+    $list_pattern = '/\[list\](.*?)\[\/list\]/is';
+    if (preg_match($list_pattern, $text)) {
+        $text = preg_replace_callback($list_pattern, function($matches) {
+            $content = $matches[1];
+            // Traiter les éléments de liste
+            $content = preg_replace_callback('/\[\*\](.*?)(?=\[\*\]|\[\/list\]|$)/is', function($item_matches) {
+                $item_content = process_nested_bbcode($item_matches[1]); // Traiter récursivement
+                return '<li>' . $item_content . '</li>';
+            }, $content);
+            return '<ul>' . $content . '</ul>';
+        }, $text);
+    }
+    
+    // Balise [list=1] avec éléments
+    $ordered_list_pattern = '/\[list=1\](.*?)\[\/list\]/is';
+    if (preg_match($ordered_list_pattern, $text)) {
+        $text = preg_replace_callback($ordered_list_pattern, function($matches) {
+            $content = $matches[1];
+            // Traiter les éléments de liste
+            $content = preg_replace_callback('/\[\*\](.*?)(?=\[\*\]|\[\/list\]|$)/is', function($item_matches) {
+                $item_content = process_nested_bbcode($item_matches[1]); // Traiter récursivement
+                return '<li>' . $item_content . '</li>';
+            }, $content);
+            return '<ol>' . $content . '</ol>';
+        }, $text);
     }
     
     return $text;
 }
 
 /**
- * Convertir les codes BBCode en HTML
+ * Fonction principale pour convertir le BBCode en HTML
  * 
  * @param string $text Le texte avec les codes BBCode
  * @return string Le texte avec le BBCode converti en HTML
  */
 function convert_bbcode($text) {
-    // Traitement spécial pour le format de citation personnalisé [b]Citation de USER[/b] : [citer]texte[/citer]
-    $pattern_custom_cite = '/\[b\]Citation de ([^[]+)\[\/b\] : \[citer\](.*?)\[\/citer\]/is';
-    $replacement_custom_cite = '<div class="custom-citation"><div class="citation-author">Citation de <strong>$1</strong> :</div><div class="citation-content">$2</div></div>';
-    $text = preg_replace($pattern_custom_cite, $replacement_custom_cite, $text);
-    
-    // Traitement récursif des balises cacher (spoilers) imbriquées
-    $text = process_spoilers($text);
-    
-    // BBCode de formatage de texte
-    $bbcode_patterns = [
-        '/\[b\](.*?)\[\/b\]/is',                  // Gras
-        '/\[i\](.*?)\[\/i\]/is',                  // Italique
-        '/\[u\](.*?)\[\/u\]/is',                  // Souligné
-        '/\[s\](.*?)\[\/s\]/is',                  // Barré
-        '/\[size=([1-7])\](.*?)\[\/size\]/is',    // Taille de texte
-        '/\[couleur=([#a-zA-Z0-9]+)\](.*?)\[\/couleur\]/is', // Couleur
-        '/\[center\](.*?)\[\/center\]/is',        // Centré
-        '/\[left\](.*?)\[\/left\]/is',            // Aligné à gauche
-        '/\[right\](.*?)\[\/right\]/is',          // Aligné à droite
-        '/\[quote\](.*?)\[\/quote\]/is',          // Citation simple
-        '/\[quote=(.*?)\](.*?)\[\/quote\]/is',    // Citation avec auteur
-        '/\[code\](.*?)\[\/code\]/is',            // Code
-        '/\[url\](.*?)\[\/url\]/is',              // Lien URL simple
-        '/\[url=(.*?)\](.*?)\[\/url\]/is',        // Lien URL avec texte
-        '/\[img\](.*?)\[\/img\]/is',              // Image
-        '/\[list\](.*?)\[\/list\]/is',            // Liste non ordonnée
-        '/\[list=1\](.*?)\[\/list\]/is',          // Liste numérotée
-        '/\[\*\](.*?)(?=\[\*\]|\[\/list\])/is',   // Élément de liste
-        '/\[email\](.*?)\[\/email\]/is',          // Email
-        '/\[email=(.*?)\](.*?)\[\/email\]/is',    // Email avec texte
-        '/\[youtube\]([a-zA-Z0-9_-]{11})\[\/youtube\]/is', // Vidéo YouTube (ID de 11 caractères)
-        '/\[citer\](.*?)\[\/citer\]/is',          // Citation simple sans auteur (pour les cas restants)
-    ];
-    
-    $html_replacements = [
-        '<strong>$1</strong>',                    // Gras
-        '<em>$1</em>',                            // Italique
-        '<span style="text-decoration: underline;">$1</span>', // Souligné
-        '<span style="text-decoration: line-through;">$1</span>', // Barré
-        '<span style="font-size: $1em;">$2</span>', // Taille de texte
-        '<span style="color: $1;">$2</span>',     // Couleur
-        '<div style="text-align: center;">$1</div>', // Centré
-        '<div style="text-align: left;">$1</div>', // Aligné à gauche
-        '<div style="text-align: right;">$1</div>', // Aligné à droite
-        '<blockquote class="blockquote">$1</blockquote>', // Citation simple
-        '<blockquote class="blockquote"><p>$2</p><footer class="blockquote-footer">$1</footer></blockquote>', // Citation avec auteur
-        '<pre><code>$1</code></pre>',             // Code
-        '<a href="$1" target="_blank">$1</a>',    // Lien URL simple
-        '<a href="$1" target="_blank">$2</a>',    // Lien URL avec texte
-        '<img src="$1" class="img-fluid" alt="Image" />', // Image
-        '<ul>$1</ul>',                            // Liste non ordonnée
-        '<ol>$1</ol>',                            // Liste numérotée
-        '<li>$1</li>',                            // Élément de liste
-        '<a href="mailto:$1">$1</a>',             // Email
-        '<a href="mailto:$1">$2</a>',             // Email avec texte
-        '<div class="ratio ratio-16x9 mb-3"><iframe src="https://www.youtube.com/embed/$1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>', // YouTube embed
-        '<div class="simple-citation">$1</div>',  // Citation simple sans auteur
-    ];
-    
-    // Appliquer les remplacements
-    $text = preg_replace($bbcode_patterns, $html_replacements, $text);
-    
-    // Gestion particulière pour les sauts de ligne à l'intérieur des listes
-    $text = str_replace("\n[*]", "[*]", $text);
-    
-    return $text;
+    // Utiliser la fonction récursive pour traiter les imbrications
+    return process_nested_bbcode($text);
 }
 
 /**
@@ -223,6 +375,9 @@ function format_message($text) {
     // Convertir les smileys avant de traiter les sauts de ligne
     $text = convert_smileys($text);
     
+    // Convertir les URLs brutes en liens cliquables
+    $text = convert_urls($text);
+    
     // Convertir les sauts de ligne en balises <br>
     $text = nl2br($text);
     
@@ -230,7 +385,7 @@ function format_message($text) {
 }
 
 /**
- * Créer la pagination - version robuste contre les caractères spéciaux
+ * Créer la pagination
  * 
  * @param int $total_items Nombre total d'éléments
  * @param int $items_per_page Nombre d'éléments par page
@@ -247,15 +402,9 @@ function pagination($total_items, $items_per_page, $current_page, $url_pattern) 
     
     $html = '<nav aria-label="Pagination"><ul class="pagination">';
     
-    // Fonction sécurisée pour générer l'URL de pagination
-    $getPageUrl = function($page) use ($url_pattern) {
-        // Remplace toutes les occurrences de %d ou %%d par le numéro de page
-        return str_replace(['%%d', '%d'], $page, $url_pattern);
-    };
-    
     // Bouton "Précédent"
     if ($current_page > 1) {
-        $html .= '<li class="page-item"><a class="page-link" href="' . $getPageUrl($current_page - 1) . '">Précédent</a></li>';
+        $html .= '<li class="page-item"><a class="page-link" href="' . sprintf($url_pattern, $current_page - 1) . '">Précédent</a></li>';
     } else {
         $html .= '<li class="page-item disabled"><span class="page-link">Précédent</span></li>';
     }
@@ -268,13 +417,13 @@ function pagination($total_items, $items_per_page, $current_page, $url_pattern) 
         if ($i == $current_page) {
             $html .= '<li class="page-item active"><span class="page-link">' . $i . '</span></li>';
         } else {
-            $html .= '<li class="page-item"><a class="page-link" href="' . $getPageUrl($i) . '">' . $i . '</a></li>';
+            $html .= '<li class="page-item"><a class="page-link" href="' . sprintf($url_pattern, $i) . '">' . $i . '</a></li>';
         }
     }
     
     // Bouton "Suivant"
     if ($current_page < $total_pages) {
-        $html .= '<li class="page-item"><a class="page-link" href="' . $getPageUrl($current_page + 1) . '">Suivant</a></li>';
+        $html .= '<li class="page-item"><a class="page-link" href="' . sprintf($url_pattern, $current_page + 1) . '">Suivant</a></li>';
     } else {
         $html .= '<li class="page-item disabled"><span class="page-link">Suivant</span></li>';
     }

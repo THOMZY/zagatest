@@ -676,7 +676,6 @@ select {
     display: inline-block;
     vertical-align: middle;
     margin: 0 2px;
-    max-height: 24px; /* Limiter la hauteur */
 }
 
 /* S'assurer que le bouton de recherche est bien visible */
