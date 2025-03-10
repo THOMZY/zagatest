@@ -119,29 +119,31 @@ function convert_urls($text) {
 function process_nested_bbcode($text) {
     static $spoiler_count = 0;
     
-// Traiter d'abord les balises [img] pour éviter les conflits
-while (preg_match('/\[img\](.*?)\[\/img\]/is', $text, $matches)) {
-    $url = $matches[1];
+    // Augmenter les limites de regex pour PHP
+    ini_set('pcre.backtrack_limit', 10000000);
+    ini_set('pcre.recursion_limit', 10000);
     
-    // S'assurer que l'URL a le bon format (ajouter http:// si nécessaire)
-    if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
-        $url = 'http://' . $url;
+    // Traiter d'abord les balises [img] pour éviter les conflits
+    while (preg_match('/\[img\](.*?)\[\/img\]/is', $text, $matches)) {
+        $url = $matches[1];
+        $original = $matches[0]; // Le texte complet [img]...[/img]
+        
+        // S'assurer que l'URL a le bon format (ajouter http:// si nécessaire)
+        if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
+            $url = 'http://' . $url;
+        }
+        
+        // Remplacer directement le texte original
+        $text = str_replace($original, $replacement, $text);
     }
-    
-    // Au lieu de remplacer par une balise img, on ajoute juste un joli encadré
-    $replacement = '<span class="img-frame">' . $url . '</span>';
-    
-    // Remplacer uniquement la première occurrence
-    $text = preg_replace('/\[img\]' . preg_quote($matches[1], '/') . '\[\/img\]/is', $replacement, $text, 1);
-}
-    
+	
     // Balise [youtube]
-    $youtube_pattern = '/\[youtube\]([a-zA-Z0-9_-]{11})\[\/youtube\]/is';
-    if (preg_match($youtube_pattern, $text)) {
-        $text = preg_replace_callback($youtube_pattern, function($matches) {
-            return '<div class="ratio ratio-16x9 mb-3"><iframe src="https://www.youtube.com/embed/' . $matches[1] . '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
-        }, $text);
-    }
+     $youtube_pattern = '/\[youtube\]([a-zA-Z0-9_-]{11})\[\/youtube\]/is';
+     if (preg_match($youtube_pattern, $text)) {
+         $text = preg_replace_callback($youtube_pattern, function($matches) {
+             '<div class="ratio ratio-16x9 mb-3"><iframe src="https://www.youtube.com/embed/$1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>', // YouTube embed
+         }, $text);
+     }
     
     // Traiter ensuite le format de citation personnalisé
     $custom_cite_pattern = '/\[b\]Citation de ([^[]+)\[\/b\] : \[citer\](.*?)\[\/citer\]/is';
@@ -152,29 +154,31 @@ while (preg_match('/\[img\](.*?)\[\/img\]/is', $text, $matches)) {
         }, $text);
     }
     
-// Balise [cacher] (spoiler)
-while (preg_match('/\[cacher\](.*?)\[\/cacher\]/is', $text, $matches)) {
-    // Traiter récursivement le contenu pour gérer les balises imbriquées à l'intérieur
-    $content = process_nested_bbcode($matches[1]);
-    $spoiler_id = 'spoiler-' . $spoiler_count++;
-    
-    $replacement = '<div class="spoiler-container">
+    // Balise [cacher] (spoiler)
+    while (preg_match('/\[cacher\](.*?)\[\/cacher\]/is', $text, $matches)) {
+        $original = $matches[0]; // Le texte complet [cacher]...[/cacher]
+        // Traiter récursivement le contenu pour gérer les balises imbriquées à l'intérieur
+        $content = process_nested_bbcode($matches[1]);
+        $spoiler_id = 'spoiler-' . $spoiler_count++;
+        
+        $replacement = '<div class="spoiler-container">
                   <button class="spoiler-button" onclick="toggleSpoiler(\'' . $spoiler_id . '\')">▶ Afficher le contenu caché</button>
                   <div id="' . $spoiler_id . '" class="spoiler-content hidden">' . $content . '</div>
                 </div>';
-    
-    // Remplacer seulement la première occurrence pour éviter les problèmes d'imbrication
-    $text = preg_replace('/\[cacher\]' . preg_quote($matches[1], '/') . '\[\/cacher\]/is', $replacement, $text, 1);
-}
+        
+        // Remplacer directement le texte original
+        $text = str_replace($original, $replacement, $text);
+    }
     
     // Balise [citer] (citation)
-		while (preg_match('/\[citer\](.*?)\[\/citer\]/is', $text, $matches)) {
-			$content = process_nested_bbcode($matches[1]); // Traiter récursivement
-			$replacement = '<div class="simple-citation">' . $content . '</div>';
+    while (preg_match('/\[citer\](.*?)\[\/citer\]/is', $text, $matches)) {
+        $original = $matches[0]; // Le texte complet [citer]...[/citer]
+        $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+        $replacement = '<div class="simple-citation">' . $content . '</div>';
     
-    // Remplacer seulement la première occurrence pour éviter les problèmes d'imbrication
-	$text = preg_replace('/\[citer\]' . preg_quote($matches[1], '/') . '\[\/citer\]/is', $replacement, $text, 1);
-}
+        // Remplacer directement le texte original
+        $text = str_replace($original, $replacement, $text);
+    }
     
     // Balise [center]
     $center_pattern = '/\[center\](.*?)\[\/center\]/is';
@@ -293,39 +297,41 @@ while (preg_match('/\[cacher\](.*?)\[\/cacher\]/is', $text, $matches)) {
         }, $text);
     }
     
-	// Balise [url] avec texte - modification avec une approche différente
-while (preg_match('/\[url=(.*?)\](.*?)\[\/url\]/is', $text, $matches)) {
-    $url = $matches[1];
-    $link_text = $matches[2];
-    
-    // Traiter récursivement le contenu
-    $link_text = process_nested_bbcode($link_text);
-    
-    // S'assurer que l'URL a le bon format
-    if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
-        $url = 'http://' . $url;
+    // Balise [url] avec texte - nouvelle approche simplifiée
+    while (preg_match('/\[url=(.*?)\](.*?)\[\/url\]/is', $text, $matches)) {
+        $url = $matches[1];
+        $link_text = $matches[2];
+        $original = $matches[0]; // Le texte complet [url=...]...[/url]
+        
+        // Traiter récursivement le contenu
+        $link_text = process_nested_bbcode($link_text);
+        
+        // S'assurer que l'URL a le bon format
+        if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
+            $url = 'http://' . $url;
+        }
+        
+        $replacement = '<a href="' . $url . '" target="_blank">' . $link_text . '</a>';
+        
+        // Remplacer directement le texte original par le remplacement
+        $text = str_replace($original, $replacement, $text);
     }
-    
-    $replacement = '<a href="' . $url . '" target="_blank">' . $link_text . '</a>';
-    
-    // Utilisation de str_replace au lieu de preg_replace pour éviter les problèmes d'échappement
-    $text = str_replace($matches[0], $replacement, $text);
-}
 
-// Balise [url] simple - modification avec une approche différente
-while (preg_match('/\[url\](.*?)\[\/url\]/is', $text, $matches)) {
-    $url = $matches[1];
-    
-    // S'assurer que l'URL a le bon format
-    if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
-        $url = 'http://' . $url;
+    // Balise [url] simple - nouvelle approche simplifiée
+    while (preg_match('/\[url\](.*?)\[\/url\]/is', $text, $matches)) {
+        $url = $matches[1];
+        $original = $matches[0]; // Le texte complet [url]...[/url]
+        
+        // S'assurer que l'URL a le bon format
+        if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
+            $url = 'http://' . $url;
+        }
+        
+        $replacement = '<a href="' . $url . '" target="_blank">' . $url . '</a>';
+        
+        // Remplacer directement
+        $text = str_replace($original, $replacement, $text);
     }
-    
-    $replacement = '<a href="' . $url . '" target="_blank">' . $url . '</a>';
-    
-    // Utilisation de str_replace au lieu de preg_replace pour éviter les problèmes d'échappement
-    $text = str_replace($matches[0], $replacement, $text);
-}
     
     // Balise [email] avec texte
     $email_text_pattern = '/\[email=(.*?)\](.*?)\[\/email\]/is';
@@ -376,16 +382,16 @@ while (preg_match('/\[url\](.*?)\[\/url\]/is', $text, $matches)) {
 }
 
 /**
- * Convertir uniquement les URLs d'images en balises img
+ * Convertir tous types d'URLs en liens ou images
  * 
- * @param string $text Le texte contenant des URLs d'images
- * @return string Le texte avec les URLs d'images converties en balises img
+ * @param string $text Le texte contenant des URLs
+ * @return string Le texte avec les URLs converties
  */
-function convert_image_urls($text) {
-    // Regex pour trouver les URLs d'images, en excluant celles qui font déjà partie d'une balise img ou d'un lien
+function convert_all_urls($text) {
+    // Regex pour trouver les URLs, en excluant celles qui font déjà partie d'une balise a ou img
     $pattern = '~(?<!href=[\'"])(?<!src=[\'"])(https?://[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:/[^\s<]*)?|www\.[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:/[^\s<]*)?)~i';
     
-    // Remplacer uniquement les URLs qui pointent vers des images
+    // Remplacer les URLs par des liens ou des images
     return preg_replace_callback($pattern, function($matches) {
         $url = $matches[0];
         
@@ -405,8 +411,8 @@ function convert_image_urls($text) {
             return '<img src="' . $full_url . '" class="img-fluid" alt="Image">';
         }
         
-        // Si ce n'est pas une image, laisser l'URL telle quelle
-        return $url;
+        // Sinon, retourner un lien
+        return '<a href="' . $full_url . '" target="_blank">' . $url . '</a>';
     }, $text);
 }
 
@@ -424,10 +430,14 @@ function convert_bbcode($text) {
         '/\[url=(.*?)\](.*?)\[\/url\]/is',
         function($matches) {
             $url = $matches[1];
+            $link_text = $matches[2];
+            
+            // S'assurer que l'URL a le bon format
             if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
                 $url = 'http://' . $url;
             }
-            return '<a href="' . $url . '" target="_blank">' . $matches[2] . '</a>';
+            
+            return '<a href="' . $url . '" target="_blank">' . $link_text . '</a>';
         },
         $text
     );
@@ -437,9 +447,12 @@ function convert_bbcode($text) {
         '/\[url\](.*?)\[\/url\]/is',
         function($matches) {
             $url = $matches[1];
+            
+            // S'assurer que l'URL a le bon format
             if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
                 $url = 'http://' . $url;
             }
+            
             return '<a href="' . $url . '" target="_blank">' . $url . '</a>';
         },
         $text
@@ -462,30 +475,25 @@ function convert_bbcode($text) {
     return process_nested_bbcode($text);
 }
 
-/**
- * Formater le texte d'un message pour l'affichage
- * (conversion des sauts de ligne, smileys, etc.)
- * 
- * @param string $text Le texte à formater
- * @return string Le texte formaté
- */
 function format_message($text) {
     // Sécuriser le texte d'abord mais en préservant les balises BBCode
     $text = str_replace(['<', '>'], ['&lt;', '&gt;'], $text);
     
-    // Convertir le BBCode en HTML maintenant que les autres balises HTML sont sécurisées
-    $text = convert_bbcode($text);
+    // Utiliser directement process_nested_bbcode au lieu de convert_bbcode
+    $text = process_nested_bbcode($text);
     
     // Convertir les smileys
     $text = convert_smileys($text);
     
-    // Convertir uniquement les URLs d'images (pas les autres URLs)
-    $text = convert_image_urls($text);
+    // Convertir toutes les URLs (qui ne sont pas dans des balises)
+    $text = convert_all_urls($text);    
     
     // Convertir les sauts de ligne en balises <br>
     $text = nl2br($text);
     
     return $text;
+	
+	
 }
 
 /**
