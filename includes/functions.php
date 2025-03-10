@@ -128,7 +128,8 @@ while (preg_match('/\[img\](.*?)\[\/img\]/is', $text, $matches)) {
         $url = 'http://' . $url;
     }
     
-    $replacement = '<img src="' . $url . '" class="img-fluid" alt="Image">';
+    // Au lieu de remplacer par une balise img, on ajoute juste un joli encadré
+    $replacement = '<span class="img-frame">' . $url . '</span>';
     
     // Remplacer uniquement la première occurrence
     $text = preg_replace('/\[img\]' . preg_quote($matches[1], '/') . '\[\/img\]/is', $replacement, $text, 1);

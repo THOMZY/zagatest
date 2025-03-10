@@ -684,3 +684,12 @@ select {
     border-color: #1976d2 !important;
     color: white !important;
 }
+
+.img-frame {
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  padding: 5px;
+  margin: 0 3px;
+  background-color: #f8f9fa;
+  display: inline-block;
+}
