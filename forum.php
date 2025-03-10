@@ -49,13 +49,21 @@ $breadcrumb = [
 
 // Pagination
 $topics_per_page = 20;
+$show_all = isset($_GET['all']) && $_GET['all'] == 1;
 $current_page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
-$offset = ($current_page - 1) * $topics_per_page;
 
 // Récupérer le nombre total de topics dans ce forum
 $forum_id = (int)$forum_id; // Sécuriser l'ID du forum
 $count_query = $db->query("SELECT COUNT(*) FROM rf_topics WHERE idForum = $forum_id AND visible = '1'");
 $total_topics = $count_query->fetchColumn();
+
+if ($show_all) {
+    $offset = 0;
+    $topics_per_page = $total_topics; // Tous les topics
+    // Ne pas changer current_page ici pour garder la page actuelle
+} else {
+    $offset = ($current_page - 1) * $topics_per_page;
+}
 
 // Conversion des paramètres en entiers pour éviter les problèmes de syntaxe SQL
 $forum_id = (int)$forum_id;
@@ -90,9 +98,109 @@ $topics_query = $db->query("
     LIMIT $offset, $topics_per_page
 ");
 
+// Fonction pour créer la pagination améliorée avec bouton "Tout"
+function enhanced_pagination($total_items, $items_per_page, $current_page, $url_pattern, $show_all = false) {
+    $standard_per_page = 20; // Nombre d'items par page en mode normal
+    $total_pages = ceil($total_items / ($show_all ? $standard_per_page : $items_per_page));
+    
+    if ($total_pages <= 1 && !$show_all) {
+        return '';
+    }
+    
+    $html = '<nav aria-label="Pagination"><ul class="pagination pagination-sm flex-wrap justify-content-center">';
+    
+    // Fonction sécurisée pour générer l'URL de pagination
+    $getPageUrl = function($page) use ($url_pattern, $show_all) {
+        // Si on est en mode "Tout" et qu'on veut générer une URL pour une page spécifique,
+        // on doit s'assurer de retirer le paramètre "all=1"
+        if ($show_all) {
+            // Remplacer "all=1" par "page=X"
+            return str_replace('all=1', 'page=' . $page, $url_pattern);
+        } else {
+            // Comportement normal
+            return str_replace(['%%d', '%d'], $page, $url_pattern);
+        }
+    };
+    
+    // URL pour "Afficher tout"
+    $all_url = str_replace(['page=%d', 'page=%%d'], 'all=1', $url_pattern);
+    
+    // Bouton "Précédent"
+    if ($current_page > 1 && !$show_all) {
+        $html .= '<li class="page-item"><a class="page-link" href="' . $getPageUrl($current_page - 1) . '">Précédent</a></li>';
+    } else {
+        $html .= '<li class="page-item disabled"><span class="page-link">Précédent</span></li>';
+    }
+    
+    // Afficher un nombre limité de pages pour tenir sur une ligne
+    // On limite à un maximum de 7 boutons de pages (3 avant, la page courante, 3 après)
+    $max_page_buttons = 7;
+    $half = floor($max_page_buttons / 2);
+    
+    $start_page = max(1, $current_page - $half);
+    $end_page = min($total_pages, $start_page + $max_page_buttons - 1);
+    
+    // Ajuster si on est près de la fin
+    if ($end_page - $start_page < $max_page_buttons - 1) {
+        $start_page = max(1, $end_page - $max_page_buttons + 1);
+    }
+    
+    // Afficher un ellipsis au début si nécessaire
+    if ($start_page > 1) {
+        $html .= '<li class="page-item"><a class="page-link" href="' . $getPageUrl(1) . '">1</a></li>';
+        if ($start_page > 2) {
+            $html .= '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+    
+    // Afficher les pages
+    for ($i = $start_page; $i <= $end_page; $i++) {
+        if ($i == $current_page && !$show_all) {
+            $html .= '<li class="page-item active"><span class="page-link">' . $i . '</span></li>';
+        } else {
+            $html .= '<li class="page-item"><a class="page-link" href="' . $getPageUrl($i) . '">' . $i . '</a></li>';
+        }
+    }
+    
+    // Afficher un ellipsis à la fin si nécessaire
+    if ($end_page < $total_pages) {
+        if ($end_page < $total_pages - 1) {
+            $html .= '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+        $html .= '<li class="page-item"><a class="page-link" href="' . $getPageUrl($total_pages) . '">' . $total_pages . '</a></li>';
+    }
+    
+    // Bouton "Suivant"
+    if ($current_page < $total_pages && !$show_all) {
+        $html .= '<li class="page-item"><a class="page-link" href="' . $getPageUrl($current_page + 1) . '">Suivant</a></li>';
+    } else {
+        $html .= '<li class="page-item disabled"><span class="page-link">Suivant</span></li>';
+    }
+    
+    // Bouton "Tout"
+    if ($show_all) {
+        $html .= '<li class="page-item active"><span class="page-link">Tout</span></li>';
+    } else {
+        $html .= '<li class="page-item"><a class="page-link" href="' . $all_url . '">Tout</a></li>';
+    }
+    
+    $html .= '</ul></nav>';
+    
+    return $html;
+}
+
 // Inclure l'en-tête
 include 'includes/header.php';
+
+// Toujours utiliser le même format d'URL, qu'on soit en mode "Tout" ou non
+$pagination_url = "forum.php?id=$forum_id";
+$pagination_url .= $show_all ? "&all=1" : "&page=%d";
 ?>
+
+<!-- Pagination en haut de page -->
+<div class="top-pagination mb-4">
+    <?php echo enhanced_pagination($total_topics, $topics_per_page, $current_page, $pagination_url, $show_all); ?>
+</div>
 
 <!-- Liste des topics -->
 <div class="card mb-4">
@@ -143,11 +251,10 @@ include 'includes/header.php';
     <?php endif; ?>
 </div>
 
-<!-- Pagination -->
-<?php
-$pagination = pagination($total_topics, $topics_per_page, $current_page, "forum.php?id=$forum_id&page=%d");
-echo $pagination;
-?>
+<!-- Pagination en bas de page -->
+<div class="bottom-pagination mb-4">
+    <?php echo enhanced_pagination($total_topics, $topics_per_page, $current_page, $pagination_url, $show_all); ?>
+</div>
 
 <?php
 // Inclure le pied de page
