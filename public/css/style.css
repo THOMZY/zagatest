@@ -686,10 +686,10 @@ select {
 }
 
 .img-frame {
-  border: 2px solid #ccc;
+  border: 1px solid #a9a9a9;
   border-radius: 5px;
-  padding: 5px;
+  padding: 2px;
   margin: 0 3px;
-  background-color: #f8f9fa;
+  background-color: #grey;
   display: inline-block;
 }

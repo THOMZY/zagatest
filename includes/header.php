@@ -8,6 +8,9 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
+    <!-- Font Awesome pour l'icône smiley -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
     <!-- CSS personnalisé -->
     <link href="public/css/style.css" rel="stylesheet">
 </head>
@@ -17,8 +20,14 @@
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
                 <h1 class="h3 mb-2 mb-md-0"><a href="index.php" class="text-white text-decoration-none">Archives du Forum</a></h1>
                 
-                <!-- Formulaire de recherche -->
-                <div class="d-flex">
+                <!-- Barre d'outils avec bouton smiley et recherche -->
+                <div class="d-flex align-items-center">
+                    <!-- Bouton smiley -->
+                    <a href="smiley.php" class="btn btn-outline-light btn-sm me-2" title="Liste des smileys">
+                        <i class="far fa-smile"></i>
+                    </a>
+                    
+                    <!-- Formulaire de recherche -->
                     <form action="search.php" method="GET" class="d-flex">
                         <input type="text" name="term" class="form-control form-control-sm me-2" placeholder="Rechercher..." aria-label="Rechercher">
                         <button type="submit" class="btn btn-outline-light btn-sm">Rechercher</button>

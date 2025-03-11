@@ -132,7 +132,7 @@ function format_message($text) {
     $text = str_replace(['<', '>'], ['&lt;', '&gt;'], $text);
     
     // Convertir le BBCode en HTML
-    $text = process_nested_bbcode($text);
+    $text = convert_bbcode($text);
     
     // Convertir les smileys
     $text = convert_smileys($text);
