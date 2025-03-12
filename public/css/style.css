@@ -96,10 +96,17 @@ header a.text-white {
 
 .breadcrumb-item a {
   color: #64b5f6;
+  text-decoration: none;
+  transition: color 0.2s
 }
 
 .breadcrumb-item.active {
   color: #aaa;
+}
+
+.breadcrumb-item a:hover {
+    color: #90caf9;
+    text-decoration: underline;
 }
 
 /* Cards et containers */
@@ -511,8 +518,9 @@ footer {
 
 /* Composants Bootstrap customisés */
 .btn-primary {
-  background-color: #1976d2;
-  border-color: #1976d2;
+	background-color: #1976d2 !important;
+	border-color: #1976d2 !important;
+	color: white !important;
 }
 
 .btn-primary:hover {
@@ -558,29 +566,6 @@ footer {
 .message-count .badge {
     font-size: 0.9rem;
     padding: 0.5rem 1rem;
-}
-
-/* Amélioration du fil d'Ariane */
-.breadcrumb {
-    padding: 1rem;
-    background-color: #222;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-}
-
-.breadcrumb-item a {
-    color: #64b5f6;
-    text-decoration: none;
-    transition: color 0.2s;
-}
-
-.breadcrumb-item a:hover {
-    color: #90caf9;
-    text-decoration: underline;
-}
-
-.breadcrumb-item.active {
-    color: #ddd;
 }
 
 /* S'assurer que les smileys dans le titre sont bien alignés */
@@ -671,25 +656,11 @@ select {
     color: #ffffff; /* Texte en blanc dans les alertes */
 }
 
-/* S'assurer que les smileys s'affichent */
-.smiley {
-    display: inline-block;
-    vertical-align: middle;
-    margin: 0 2px;
-}
-
-/* S'assurer que le bouton de recherche est bien visible */
-.btn-primary {
-    background-color: #1976d2 !important;
-    border-color: #1976d2 !important;
-    color: white !important;
-}
-
 .img-frame {
   border: 1px solid #a9a9a9;
   border-radius: 5px;
   padding: 2px;
   margin: 0 3px;
-  background-color: #grey;
+  background-color: #808080;
   display: inline-block;
 }
