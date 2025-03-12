@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" href="public/img/favicon.ico" type="image/x-icon">
     <title><?php echo isset($page_title) ? convert_smileys(secure_output($page_title)) . ' - ' : ''; ?>Archives du Forum</title>
     
     <!-- Bootstrap CSS -->
