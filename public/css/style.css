@@ -673,6 +673,7 @@ select {
     background-color: #1e1e1e;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     overflow: hidden;
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .quote-box.with-author {
@@ -723,11 +724,6 @@ select {
 
 .quote-content .quote-box .quote-content {
     background-color: #1e1e1e;
-}
-
-/* Animation subtile au survol */
-.quote-box {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .quote-box:hover {

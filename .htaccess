@@ -1,15 +1,31 @@
 # Activer le moteur de réécriture
 RewriteEngine On
 
+# Redirection pour topic.php de la racine vers le sous-dossier /free
+RewriteRule ^topic\.php(.*)$ /free/topic.php$1 [R=301,L]
+
+# Redirection pour forum.php de la racine vers le sous-dossier /free
+RewriteRule ^forum\.php(.*)$ /free/forum.php$1 [R=301,L]
+
 # Redirection pour les anciens liens de topics (avec gestion prioritaire des ancres)
 # Format: /forums/topic-XXXXXX-1-nom-du-topic.html
-# Vers: /topic.php?id=XXXXXX
-RewriteRule ^forums/topic-([0-9]+)-[0-9]+-.*\.html$ /topic.php?id=$1 [R=301,L]
+# Vers: /free/topic.php?id=XXXXXX
+RewriteRule ^forums/topic-([0-9]+)-[0-9]+-.*\.html$ /free/topic.php?id=$1 [R=301,L]
 
 # Redirection pour les anciens liens vers les forums
 # Format: /forums/forum-XXXXXX-1.html
-# Vers: /forum.php?id=XXXXXX
-RewriteRule ^forums/forum-([0-9]+)-[0-9]+\.html$ /forum.php?id=$1 [R=301,L]
+# Vers: /free/forum.php?id=XXXXXX
+RewriteRule ^forums/forum-([0-9]+)-[0-9]+\.html$ /free/forum.php?id=$1 [R=301,L]
+
+# Redirection pour les anciens liens déjà dans /free
+# Format: /free/forums/topic-XXXXXX-1-nom-du-topic.html
+# Vers: /free/topic.php?id=XXXXXX
+RewriteRule ^free/forums/topic-([0-9]+)-[0-9]+-.*\.html$ /free/topic.php?id=$1 [R=301,L]
+
+# Redirection pour les anciens liens vers les forums déjà dans /free
+# Format: /free/forums/forum-XXXXXX-1.html
+# Vers: /free/forum.php?id=XXXXXX
+RewriteRule ^free/forums/forum-([0-9]+)-[0-9]+\.html$ /free/forum.php?id=$1 [R=301,L]
 
 # Pour les fichiers et dossiers qui existent réellement, ne pas appliquer de règles
 RewriteCond %{REQUEST_FILENAME} -f [OR]

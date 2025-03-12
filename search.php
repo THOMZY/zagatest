@@ -18,6 +18,7 @@ $breadcrumb = [
 // Variables pour la recherche
 $search_term = isset($_GET['term']) ? trim($_GET['term']) : '';
 $search_type = isset($_GET['type']) ? $_GET['type'] : 'title'; // Par défaut, recherche dans les titres
+$search_forum = isset($_GET['forum']) ? (int)$_GET['forum'] : 0; // 0 signifie "tous les forums"
 $results = [];
 $total_results = 0;
 
@@ -49,6 +50,7 @@ if (!empty($search_term)) {
             WHERE 
                 u.pseudo LIKE :search_term
                 AND t.visible = '1'
+                " . ($search_forum > 0 ? "AND t.idForum = :forum_id" : "") . "
         ");
     } elseif ($search_type === 'content') {
         // Recherche dans le contenu des messages
@@ -68,6 +70,7 @@ if (!empty($search_term)) {
                 AND m.message NOT LIKE CONCAT('%url=%', :search_term_raw, '%')
                 AND t.visible = '1'
                 AND m.visible = '1'
+                " . ($search_forum > 0 ? "AND t.idForum = :forum_id" : "") . "
         ");
     } else {
         // Recherche par titre (par défaut)
@@ -79,6 +82,7 @@ if (!empty($search_term)) {
             WHERE 
                 t.titre LIKE :search_term
                 AND t.visible = '1'
+                " . ($search_forum > 0 ? "AND t.idForum = :forum_id" : "") . "
         ");
     }
     
@@ -87,6 +91,9 @@ if (!empty($search_term)) {
     if ($search_type === 'content') {
         $search_term_raw = $search_term; // Terme sans les %
         $count_stmt->bindParam(':search_term_raw', $search_term_raw, PDO::PARAM_STR);
+    }
+    if ($search_forum > 0) {
+        $count_stmt->bindParam(':forum_id', $search_forum, PDO::PARAM_INT);
     }
     $count_stmt->execute();
     $total_results = $count_stmt->fetchColumn();
@@ -122,6 +129,7 @@ if (!empty($search_term)) {
             WHERE 
                 u.pseudo LIKE :search_term
                 AND t.visible = '1'
+                " . ($search_forum > 0 ? "AND t.idForum = :forum_id" : "") . "
             GROUP BY 
                 t.id
             ORDER BY 
@@ -162,6 +170,7 @@ if (!empty($search_term)) {
                 AND m.message NOT LIKE CONCAT('%url=%', :search_term_raw, '%')
                 AND t.visible = '1'
                 AND m.visible = '1'
+                " . ($search_forum > 0 ? "AND t.idForum = :forum_id" : "") . "
             GROUP BY 
                 t.id
             ORDER BY 
@@ -190,6 +199,7 @@ if (!empty($search_term)) {
             WHERE 
                 t.titre LIKE :search_term
                 AND t.visible = '1'
+                " . ($search_forum > 0 ? "AND t.idForum = :forum_id" : "") . "
             GROUP BY 
                 t.id
             ORDER BY 
@@ -204,21 +214,50 @@ if (!empty($search_term)) {
         $search_term_raw = $search_term; // Terme sans les %
         $stmt->bindParam(':search_term_raw', $search_term_raw, PDO::PARAM_STR);
     }
+    if ($search_forum > 0) {
+        $stmt->bindParam(':forum_id', $search_forum, PDO::PARAM_INT);
+    }
     $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
     $stmt->bindParam(':limit', $results_per_page, PDO::PARAM_INT);
     $stmt->execute();
     $results = $stmt->fetchAll();
 }
 
-// Inclure l'en-tête
-include 'includes/header.php';
+// Récupérer la liste des forums pour le menu déroulant
+$forums_query = $db->query("
+    SELECT 
+        id, 
+        nom
+    FROM 
+        rf_forums 
+    ORDER BY 
+        id ASC
+");
+$forums = $forums_query->fetchAll();
+
+// Fonction pour construire une liste simple des forums (non hiérarchique)
+function build_forum_list($forums) {
+    $html = '';
+    foreach ($forums as $forum) {
+        $html .= '<option value="' . $forum->id . '"';
+        $html .= (isset($_GET['forum']) && $_GET['forum'] == $forum->id) ? ' selected' : '';
+        $html .= '>' . secure_output($forum->nom) . '</option>';
+    }
+    return $html;
+}
 
 // Construire l'URL de pagination
 $pagination_url = '';
 if (!empty($search_term)) {
     $pagination_url = "search.php?term=" . urlencode($search_term) . "&type=" . urlencode($search_type);
+    if ($search_forum > 0) {
+        $pagination_url .= "&forum=" . $search_forum;
+    }
     $pagination_url .= $show_all ? "&all=1" : "&page=%d";
 }
+
+// Inclure l'en-tête
+include 'includes/header.php';
 ?>
 
 <style>
@@ -268,14 +307,20 @@ if (!empty($search_term)) {
         <div id="searchFormContainer">
             <form action="search.php" method="GET" class="mb-4" id="searchForm" onsubmit="showLoading()">
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <input type="text" name="term" class="form-control" placeholder="Terme de recherche" value="<?php echo secure_output($search_term); ?>" required>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <select name="type" class="form-select">
                             <option value="author" <?php echo $search_type === 'author' ? 'selected' : ''; ?>>Rechercher par auteur</option>
                             <option value="title" <?php echo $search_type === 'title' ? 'selected' : ''; ?>>Rechercher dans les titres</option>
                             <option value="content" <?php echo $search_type === 'content' ? 'selected' : ''; ?>>Rechercher dans les messages</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="forum" class="form-select">
+                            <option value="0">Tous les forums</option>
+                            <?php echo build_forum_list($forums); ?>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -294,6 +339,17 @@ if (!empty($search_term)) {
                     Recherche de "<strong><?php echo secure_output($search_term); ?></strong>" dans les messages
                 <?php else: ?>
                     Recherche de "<strong><?php echo secure_output($search_term); ?></strong>" dans les titres
+                <?php endif; ?>
+                
+                <?php if ($search_forum > 0): ?>
+                    <?php
+                    // Récupérer le nom du forum
+                    $forum_name_query = $db->prepare("SELECT nom FROM rf_forums WHERE id = :forum_id");
+                    $forum_name_query->bindParam(':forum_id', $search_forum, PDO::PARAM_INT);
+                    $forum_name_query->execute();
+                    $forum_name = $forum_name_query->fetchColumn();
+                    ?>
+                    dans le forum <strong><?php echo secure_output($forum_name); ?></strong>
                 <?php endif; ?>
                 - <?php echo $total_results; ?> résultat(s) trouvé(s)
             </div>
