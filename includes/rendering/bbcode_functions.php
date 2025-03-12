@@ -40,13 +40,27 @@ function process_nested_bbcode($text) {
         }, $text);
     }
     
-    // Traiter ensuite le format de citation personnalisé
-    $custom_cite_pattern = '/\[b\]Citation de ([^[]+)\[\/b\] : \[citer\](.*?)\[\/citer\]/is';
-    if (preg_match($custom_cite_pattern, $text)) {
-        $text = preg_replace_callback($custom_cite_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
-            return '<div class="custom-citation"><div class="citation-author">Citation de <strong>' . $matches[1] . '</strong> :</div><div class="citation-content">' . $content . '</div></div>';
-        }, $text);
+    // Traiter d'abord les citations imbriquées avec auteur (de l'intérieur vers l'extérieur)
+    while (preg_match('/\[b\]Citation de ([^[]+)\[\/b\] : \[citer\]((?:[^[]|\[(?!citer|\/citer|b\]Citation)|\[b\](?!Citation))*)\[\/citer\]/is', $text, $matches)) {
+        $author = $matches[1];
+        $content = process_nested_bbcode($matches[2]); // Traiter récursivement le contenu
+        $original = $matches[0];
+        
+        $replacement = '<div class="quote-box with-author"><div class="quote-header"><i class="fas fa-quote-left"></i> Citation de <strong>' . htmlspecialchars($author) . '</strong></div><div class="quote-content">' . $content . '</div></div>';
+        
+        // Remplacer directement le texte original
+        $text = str_replace($original, $replacement, $text);
+    }
+    
+    // Ensuite traiter les citations simples restantes
+    while (preg_match('/\[citer\](.*?)\[\/citer\]/is', $text, $matches)) {
+        $content = process_nested_bbcode($matches[1]); // Traiter récursivement
+        $original = $matches[0];
+        
+        $replacement = '<div class="quote-box simple-quote"><div class="quote-header"><i class="fas fa-quote-left"></i> Citation</div><div class="quote-content">' . $content . '</div></div>';
+        
+        // Remplacer directement le texte original
+        $text = str_replace($original, $replacement, $text);
     }
     
     // Balise [cacher] (spoiler)
@@ -61,16 +75,6 @@ function process_nested_bbcode($text) {
                   <div id="' . $spoiler_id . '" class="spoiler-content hidden">' . $content . '</div>
                 </div>';
         
-        // Remplacer directement le texte original
-        $text = str_replace($original, $replacement, $text);
-    }
-    
-    // Balise [citer] (citation)
-    while (preg_match('/\[citer\](.*?)\[\/citer\]/is', $text, $matches)) {
-        $original = $matches[0]; // Le texte complet [citer]...[/citer]
-        $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-        $replacement = '<div class="simple-citation">' . $content . '</div>';
-    
         // Remplacer directement le texte original
         $text = str_replace($original, $replacement, $text);
     }
@@ -171,24 +175,6 @@ function process_nested_bbcode($text) {
         $text = preg_replace_callback($code_pattern, function($matches) {
             // Ne pas traiter le contenu du code
             return '<pre><code>' . $matches[1] . '</code></pre>';
-        }, $text);
-    }
-    
-    // Balise [quote] avec auteur
-    $quote_author_pattern = '/\[quote=(.*?)\](.*?)\[\/quote\]/is';
-    if (preg_match($quote_author_pattern, $text)) {
-        $text = preg_replace_callback($quote_author_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
-            return '<blockquote class="blockquote"><p>' . $content . '</p><footer class="blockquote-footer">' . $matches[1] . '</footer></blockquote>';
-        }, $text);
-    }
-    
-    // Balise [quote] simple
-    $quote_pattern = '/\[quote\](.*?)\[\/quote\]/is';
-    if (preg_match($quote_pattern, $text)) {
-        $text = preg_replace_callback($quote_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-            return '<blockquote class="blockquote">' . $content . '</blockquote>';
         }, $text);
     }
     

@@ -664,3 +664,73 @@ select {
   /*background-color: #808080;*/
   display: inline-block;
 }
+
+/* Styles pour les citations */
+.quote-box {
+    margin: 15px 0;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background-color: #1e1e1e;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.quote-box.with-author {
+    border-left: 4px solid #1976d2;
+}
+
+.quote-box.simple-quote {
+    border-left: 4px solid #455a64;
+}
+
+.quote-header {
+    padding: 10px 15px;
+    background-color: #262626;
+    border-bottom: 1px solid #333;
+    color: #e0e0e0;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quote-header i {
+    color: #64b5f6;
+    font-size: 0.9em;
+}
+
+.quote-header strong {
+    color: #64b5f6;
+}
+
+.quote-content {
+    padding: 15px;
+    color: #e0e0e0;
+    background-color: #242424;
+    line-height: 1.5;
+}
+
+/* Gestion de l'emboîtement des citations */
+.quote-content .quote-box {
+    margin: 10px 0;
+    margin-left: 15px;
+    background-color: #1a1a1a;
+}
+
+.quote-content .quote-box .quote-header {
+    background-color: #222222;
+}
+
+.quote-content .quote-box .quote-content {
+    background-color: #1e1e1e;
+}
+
+/* Animation subtile au survol */
+.quote-box {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quote-box:hover {
+    transform: translateX(3px);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+}
