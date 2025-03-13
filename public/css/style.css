@@ -70,20 +70,8 @@ header a.text-white {
 .search-form-container {
   width: 100%;
   max-width: 960px;
-  margin: 0 auto 1.5rem auto;
+  margin: 0 auto 1.5rem;
   padding: 0;
-}
-
-.card {
-  width: 100%;
-  max-width: 960px;
-  margin: 0 auto 1.5rem auto;
-  padding: 0;
-  background-color: #1e1e1e;
-  border: none;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
 }
 
 .card-header.bg-primary {
@@ -120,16 +108,12 @@ header a.text-white {
   margin-bottom: 1rem;
 }
 
-#searchResults {
-  min-height: 100px; /* Hauteur minimale pour éviter les sauts de page */
-}
-
 /* Pagination */
 .top-pagination,
 .bottom-pagination {
   width: 100%;
   max-width: 960px;
-  margin: 0 auto 1.5rem auto;
+  margin: 0 auto 1.5rem;
   padding: 0;
 }
 
@@ -156,6 +140,7 @@ header a.text-white {
   max-width: 960px;
   margin: 0 auto;
   padding: 0;
+  min-height: 100px; /* Hauteur minimale pour éviter les sauts de page */
 }
 
 .search-result-count {
@@ -194,7 +179,7 @@ header a.text-white {
   padding: 1rem 1.5rem;
   width: 100%;
   max-width: 960px;
-  margin: 0 auto 1.5rem auto;
+  margin: 0 auto 1.5rem;
 }
 
 .alert-info {
@@ -889,6 +874,11 @@ select {
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   overflow: hidden;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto 1.5rem;
+  padding: 0;
+  background-color: #1e1e1e;
 }
 
 .card-header {
