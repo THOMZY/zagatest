@@ -89,7 +89,8 @@ $messages_query = $db->query("
         u.time AS date_inscription,
         u.avatar,
         u.nbmess AS user_post_count,
-        u.postheader
+        u.postheader,
+        u.signature
     FROM 
         rf_messages m
     JOIN 
@@ -213,9 +214,7 @@ $pagination_url .= $show_all ? "&all=1" : "&page=%d";
             </div>
             
             <!-- Contenu du message -->
-            <div class="message-body">
-                <?php echo format_message($message->message); ?>
-            </div>
+            <div class="message-body"><?php echo format_message($message->message); ?></div><?php if (!empty($message->signature)): ?><hr class="signature-separator"><div class="signature-content"><?php echo format_message($message->signature); ?></div><?php endif; ?>
         </div>
     </div>
 <?php endwhile; ?>
@@ -230,6 +229,29 @@ $pagination_url .= $show_all ? "&all=1" : "&page=%d";
     <p class="mb-0">Ce forum est en mode lecture seule. Il n'est pas possible d'ajouter de nouvelles réponses.</p>
 </div>
 
+<!-- Script pour gérer l'affichage des signatures -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Récupérer le paramètre des signatures
+    const settings = JSON.parse(localStorage.getItem('forumSettings') || '{"showSignatures": true}');
+    const signatures = document.querySelectorAll('.signature-content, .signature-separator');
+    
+    // Fonction pour mettre à jour l'affichage des signatures
+    function updateSignatures(show) {
+        signatures.forEach(signature => {
+            signature.style.display = show ? 'block' : 'none';
+        });
+    }
+    
+    // Appliquer l'état initial
+    updateSignatures(settings.showSignatures);
+    
+    // Écouter les changements de paramètres
+    window.addEventListener('settingsChanged', function(event) {
+        updateSignatures(event.detail.showSignatures);
+    });
+});
+</script>
 <?php
 // Inclure le pied de page
 include 'includes/footer.php';

@@ -5,8 +5,6 @@
 
 ### Fonctionnalités visuels
 
-- **Options** : Permettre de ON/OFF certaines fonctions.
-- **Signatures** : Remettre les signatures des utilisateurs.
 - **Listes Smileys** :  Trier par catégories.
 - **Meilleur Header** : Améliorer l'en-tête utilisateur avec date d'inscription, nombre de messages, etc... banniere de base manquante
 - **Stats forums** : Afficher quelques parts les stats entieres du forum.
@@ -19,8 +17,7 @@
 
 ### Bufixes needed :
 
-- **BBcode** : youtube, / balise custom big, small, droite, gauche, roll
-- **Search page** : Fonctionne basiquement, refonte visuel pour s'afficher comme liste topic. Faire un truc spécial pour recherche par messages.
+- **BBcode** : youtube / balise custom big, small, droite, gauche, roll
 
 
 ### Contenu Fun

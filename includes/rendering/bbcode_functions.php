@@ -19,17 +19,93 @@ function process_nested_bbcode($text) {
     // Traiter d'abord les balises [img] pour éviter les conflits
     while (preg_match('/\[img\](.*?)\[\/img\]/is', $text, $matches)) {
         $url = $matches[1];
-        $original = $matches[0]; // Le texte complet [img]...[/img]
+        $original = $matches[0];
         
-        // S'assurer que l'URL a le bon format (ajouter http:// si nécessaire)
         if (strpos($url, 'http') !== 0 && strpos($url, 'www.') === 0) {
             $url = 'http://' . $url;
         }
         
         $replacement = '<img src="' . $url . '" class="img-fluid" alt="Image">';
-        
-        // Remplacer directement le texte original
         $text = str_replace($original, $replacement, $text);
+    }
+    
+    // Traiter les citations avec auteur de haut en bas
+    $pattern_with_author = '/\[b\]Citation de ([^[]+)\[\/b\] : \[citer\]((?:[^\[]|\[(?!b\]Citation|\/?citer\])|(?R))*)\[\/citer\]/is';
+    while (preg_match($pattern_with_author, $text, $matches)) {
+        $author = $matches[1];
+        $content = $matches[2];
+        $original = $matches[0];
+        
+        // Traiter le contenu de la citation
+        $processed_content = process_nested_bbcode($content);
+        
+        // Créer le remplacement
+        $replacement = '<div class="quote-box with-author"><div class="quote-header"><i class="fas fa-quote-left"></i> Citation de <strong>' . htmlspecialchars($author) . '</strong></div><div class="quote-content">' . $processed_content . '</div></div>';
+        
+        // Remplacer la citation dans le texte
+        $text = str_replace($original, $replacement, $text);
+    }
+    
+    // Traiter les citations simples de haut en bas
+    $pattern_simple = '/\[citer\]((?:[^\[]|\[(?!citer\])|(?R))*)\[\/citer\]/is';
+    while (preg_match($pattern_simple, $text, $matches)) {
+        $content = $matches[1];
+        $original = $matches[0];
+        
+        // Vérifier si c'est une citation simple (pas une partie d'une citation avec auteur)
+        if (strpos($original, '[b]Citation de') === false) {
+            // Traiter le contenu de la citation
+            $processed_content = process_nested_bbcode($content);
+            
+            // Créer le remplacement
+            $replacement = '<div class="quote-box simple-quote"><div class="quote-content">' . $processed_content . '</div></div>';
+            
+            // Remplacer la citation dans le texte
+            $text = str_replace($original, $replacement, $text);
+        }
+    }
+    
+    // Traiter les balises de formatage après les citations
+    $formatting_patterns = [
+        'center' => '/\[center\](.*?)\[\/center\]/is',
+        'left' => '/\[left\](.*?)\[\/left\]/is',
+        'right' => '/\[right\](.*?)\[\/right\]/is',
+        'couleur' => '/\[couleur=([#a-zA-Z0-9]+)\](.*?)\[\/couleur\]/is',
+        'color' => '/\[color=([#a-zA-Z0-9]+)\](.*?)\[\/color\]/is',
+        'b' => '/\[b\](.*?)\[\/b\]/is',
+        'i' => '/\[i\](.*?)\[\/i\]/is',
+        'u' => '/\[u\](.*?)\[\/u\]/is',
+        's' => '/\[s\](.*?)\[\/s\]/is',
+        'size' => '/\[size=([1-7])\](.*?)\[\/size\]/is'
+    ];
+    
+    foreach ($formatting_patterns as $tag => $pattern) {
+        if (preg_match($pattern, $text)) {
+            $text = preg_replace_callback($pattern, function($matches) use ($tag) {
+                $content = process_nested_bbcode($matches[count($matches) - 1]);
+                switch ($tag) {
+                    case 'center':
+                        return '<div style="text-align: center;">' . $content . '</div>';
+                    case 'left':
+                        return '<div style="text-align: left;">' . $content . '</div>';
+                    case 'right':
+                        return '<div style="text-align: right;">' . $content . '</div>';
+                    case 'couleur':
+                    case 'color':
+                        return '<span style="color: ' . $matches[1] . ';">' . $content . '</span>';
+                    case 'b':
+                        return '<strong>' . $content . '</strong>';
+                    case 'i':
+                        return '<em>' . $content . '</em>';
+                    case 'u':
+                        return '<span style="text-decoration: underline;">' . $content . '</span>';
+                    case 's':
+                        return '<span style="text-decoration: line-through;">' . $content . '</span>';
+                    case 'size':
+                        return '<span style="font-size: ' . $matches[1] . 'em;">' . $content . '</span>';
+                }
+            }, $text);
+        }
     }
     
     // Balise [youtube]
@@ -38,29 +114,6 @@ function process_nested_bbcode($text) {
         $text = preg_replace_callback($youtube_pattern, function($matches) {
             return '<div class="ratio ratio-16x9 mb-3"><iframe src="https://www.youtube.com/embed/' . $matches[1] . '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
         }, $text);
-    }
-    
-    // Traiter d'abord les citations imbriquées avec auteur (de l'intérieur vers l'extérieur)
-    while (preg_match('/\[b\]Citation de ([^[]+)\[\/b\] : \[citer\]((?:[^[]|\[(?!citer|\/citer|b\]Citation)|\[b\](?!Citation))*)\[\/citer\]/is', $text, $matches)) {
-        $author = $matches[1];
-        $content = process_nested_bbcode($matches[2]); // Traiter récursivement le contenu
-        $original = $matches[0];
-        
-        $replacement = '<div class="quote-box with-author"><div class="quote-header"><i class="fas fa-quote-left"></i> Citation de <strong>' . htmlspecialchars($author) . '</strong></div><div class="quote-content">' . $content . '</div></div>';
-        
-        // Remplacer directement le texte original
-        $text = str_replace($original, $replacement, $text);
-    }
-    
-    // Ensuite traiter les citations simples restantes
-    while (preg_match('/\[citer\](.*?)\[\/citer\]/is', $text, $matches)) {
-        $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-        $original = $matches[0];
-        
-        $replacement = '<div class="quote-box simple-quote"><div class="quote-header"><i class="fas fa-quote-left"></i> Citation</div><div class="quote-content">' . $content . '</div></div>';
-        
-        // Remplacer directement le texte original
-        $text = str_replace($original, $replacement, $text);
     }
     
     // Balise [cacher] (spoiler)
@@ -77,96 +130,6 @@ function process_nested_bbcode($text) {
         
         // Remplacer directement le texte original
         $text = str_replace($original, $replacement, $text);
-    }
-    
-    // Balise [center]
-    $center_pattern = '/\[center\](.*?)\[\/center\]/is';
-    if (preg_match($center_pattern, $text)) {
-        $text = preg_replace_callback($center_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-            return '<div style="text-align: center;">' . $content . '</div>';
-        }, $text);
-    }
-    
-    // Balise [left]
-    $left_pattern = '/\[left\](.*?)\[\/left\]/is';
-    if (preg_match($left_pattern, $text)) {
-        $text = preg_replace_callback($left_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-            return '<div style="text-align: left;">' . $content . '</div>';
-        }, $text);
-    }
-    
-    // Balise [right]
-    $right_pattern = '/\[right\](.*?)\[\/right\]/is';
-    if (preg_match($right_pattern, $text)) {
-        $text = preg_replace_callback($right_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-            return '<div style="text-align: right;">' . $content . '</div>';
-        }, $text);
-    }
-    
-    // Balise [couleur]
-    $color_pattern = '/\[couleur=([#a-zA-Z0-9]+)\](.*?)\[\/couleur\]/is';
-    if (preg_match($color_pattern, $text)) {
-        $text = preg_replace_callback($color_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
-            return '<span style="color: ' . $matches[1] . ';">' . $content . '</span>';
-        }, $text);
-    }
-    
-    // Balise [color] (version anglaise)
-    $color_en_pattern = '/\[color=([#a-zA-Z0-9]+)\](.*?)\[\/color\]/is';
-    if (preg_match($color_en_pattern, $text)) {
-        $text = preg_replace_callback($color_en_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
-            return '<span style="color: ' . $matches[1] . ';">' . $content . '</span>';
-        }, $text);
-    }
-    
-    // Balise [b]
-    $bold_pattern = '/\[b\](.*?)\[\/b\]/is';
-    if (preg_match($bold_pattern, $text)) {
-        $text = preg_replace_callback($bold_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-            return '<strong>' . $content . '</strong>';
-        }, $text);
-    }
-    
-    // Balise [i]
-    $italic_pattern = '/\[i\](.*?)\[\/i\]/is';
-    if (preg_match($italic_pattern, $text)) {
-        $text = preg_replace_callback($italic_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-            return '<em>' . $content . '</em>';
-        }, $text);
-    }
-    
-    // Balise [u]
-    $underline_pattern = '/\[u\](.*?)\[\/u\]/is';
-    if (preg_match($underline_pattern, $text)) {
-        $text = preg_replace_callback($underline_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-            return '<span style="text-decoration: underline;">' . $content . '</span>';
-        }, $text);
-    }
-    
-    // Balise [s]
-    $strike_pattern = '/\[s\](.*?)\[\/s\]/is';
-    if (preg_match($strike_pattern, $text)) {
-        $text = preg_replace_callback($strike_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[1]); // Traiter récursivement
-            return '<span style="text-decoration: line-through;">' . $content . '</span>';
-        }, $text);
-    }
-    
-    // Balise [size]
-    $size_pattern = '/\[size=([1-7])\](.*?)\[\/size\]/is';
-    if (preg_match($size_pattern, $text)) {
-        $text = preg_replace_callback($size_pattern, function($matches) {
-            $content = process_nested_bbcode($matches[2]); // Traiter récursivement
-            return '<span style="font-size: ' . $matches[1] . 'em;">' . $content . '</span>';
-        }, $text);
     }
     
     // Balise [code]

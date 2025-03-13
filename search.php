@@ -148,6 +148,12 @@ if (!empty($search_term)) {
                 f.nom AS forum_name,
                 f.id AS forum_id,
                 (SELECT COUNT(*) - 1 FROM rf_messages WHERE idTopic = t.id AND visible = '1') AS reply_count,
+                (SELECT id FROM rf_messages WHERE idTopic = t.id AND message LIKE :search_term 
+                 AND message NOT LIKE CONCAT('%href=%', :search_term_raw, '%')
+                 AND message NOT LIKE CONCAT('%http%', :search_term_raw, '%')
+                 AND message NOT LIKE CONCAT('%www.%', :search_term_raw, '%')
+                 AND message NOT LIKE CONCAT('%url=%', :search_term_raw, '%')
+                 AND visible = '1' LIMIT 1) AS message_id,
                 (SELECT message FROM rf_messages WHERE idTopic = t.id AND message LIKE :search_term 
                  AND message NOT LIKE CONCAT('%href=%', :search_term_raw, '%')
                  AND message NOT LIKE CONCAT('%http%', :search_term_raw, '%')
@@ -247,51 +253,148 @@ function build_forum_list($forums) {
 }
 
 // Construire l'URL de pagination
-$pagination_url = '';
-if (!empty($search_term)) {
-    $pagination_url = "search.php?term=" . urlencode($search_term) . "&type=" . urlencode($search_type);
-    if ($search_forum > 0) {
-        $pagination_url .= "&forum=" . $search_forum;
-    }
-    $pagination_url .= $show_all ? "&all=1" : "&page=%d";
+$pagination_url = 'search.php?term=' . urlencode($search_term) . '&type=' . $search_type;
+if ($search_forum > 0) {
+    $pagination_url .= '&forum=' . $search_forum;
 }
+$pagination_url .= $show_all ? "&all=1" : "&page=%d";
 
 // Inclure l'en-tête
 include 'includes/header.php';
 ?>
 
 <style>
-/* Styles pour les résultats de recherche dans les messages */
-.message-search-result {
-  background-color: #f8f9fa;
-  border-radius: 0.25rem;
-  overflow: hidden;
+/* Style général pour les cartes de résultats */
+.list-group-item.topic-card {
+    background-color: #1e1e1e;
+    border: none;
+    padding: 8px 12px;
+    transition: background-color 0.2s;
+    text-decoration: none;
+    color: #64b5f6;
 }
 
-.message-search-result .topic-header {
-  padding: 0.75rem 1.25rem;
-  background-color: #f1f3f5;
+.list-group-item.topic-card:hover {
+    background-color: #2d2d2d;
+    text-decoration: none;
+    color: #90caf9;
 }
 
-.message-search-result .topic-header h5 {
-  margin-bottom: 0.25rem;
+/* Style pour le titre */
+.topic-card .h6 {
+    color: inherit;
+    font-size: 14px;
+    margin-bottom: 0.25rem;
+    font-weight: normal;
 }
 
-.message-search-result .message-preview {
-  padding: 0.75rem 0;
-  line-height: 1.5;
+/* Style pour les informations de base */
+.text-muted {
+    color: #888 !important;
 }
 
-/* Mise en évidence du terme recherché */
-.message-search-result .bg-warning {
-  padding: 0.1rem 0.2rem;
-  border-radius: 0.2rem;
+.text-muted strong {
+    color: #aaa !important;
+}
+
+.forum-name {
+    color: #64b5f6;
+}
+
+.text-muted a {
+    color: #64b5f6 !important;
+}
+
+.text-muted a:hover {
+    color: #90caf9 !important;
+    text-decoration: underline;
+}
+
+.small {
+    font-size: 12px;
+}
+
+/* Style pour l'aperçu du message */
+.message-preview {
+    margin-top: 0;
+    padding: 8px 12px;
+    background-color: #2a2a2a;
+    color: #bbb;
+    font-size: 13px;
+    line-height: 1.4;
+    border-top: 1px solid #333;
+}
+
+.message-preview a {
+    color: #64b5f6;
+    text-decoration: none;
+}
+
+.message-preview a:hover {
+    color: #90caf9;
+    text-decoration: underline;
+}
+
+/* Style pour le terme recherché en surbrillance */
+.search-highlight {
+    background-color: rgba(25, 118, 210, 0.15);
+    color: #90caf9;
+    padding: 0 3px;
+    border-radius: 2px;
+}
+
+/* Séparateur entre les résultats */
+.list-group-flush .list-group-item + .list-group-item {
+    border-top: 1px solid #333 !important;
+}
+
+/* Style pour le conteneur des résultats */
+.list-group-flush {
+    background-color: #1e1e1e;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+/* Style pour l'en-tête des résultats */
+.card-header {
+    background-color: #1a237e !important;
+    border-bottom: none;
+    padding: 10px 15px;
+}
+
+.card-header .h5 {
+    font-size: 16px;
+    font-weight: normal;
+}
+
+.card-header .badge {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+    font-weight: normal;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+/* Style pour la mise en page des colonnes */
+.row.align-items-center {
+    margin: 0 -12px;
+}
+
+.row.align-items-center > [class*="col-"] {
+    padding: 0 12px;
+}
+
+/* Style pour les tooltips */
+[data-bs-toggle="tooltip"] {
+    cursor: help;
 }
 </style>
 
+<!-- Formulaire de recherche -->
 <div class="card mb-4">
     <div class="card-header bg-primary text-white">
-        <h3 class="card-title h5 mb-0">Recherche</h3>
+        <h3 class="card-title h5 mb-0">Recherche avancée</h3>
     </div>
     <div class="card-body">
         <!-- Animation de chargement (cachée par défaut) -->
@@ -299,200 +402,189 @@ include 'includes/header.php';
             <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
                 <span class="visually-hidden">Recherche en cours...</span>
             </div>
-            <p class="mt-3">Recherche en cours, veuillez patienter...</p>
-            <p class="text-muted small">La recherche peut prendre quelques instants si la base de données est volumineuse.</p>
+            <p class="mt-3 text-white">Recherche en cours, veuillez patienter...</p>
+            <p class="text-muted small">La recherche peut prendre quelques instants car la base de données est volumineuse.</p>
         </div>
 
-        <!-- Formulaire de recherche qui sera caché pendant le chargement -->
+        <!-- Formulaire de recherche -->
         <div id="searchFormContainer">
-            <form action="search.php" method="GET" class="mb-4" id="searchForm" onsubmit="showLoading()">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <input type="text" name="term" class="form-control" placeholder="Terme de recherche" value="<?php echo secure_output($search_term); ?>" required>
-                    </div>
-                    <div class="col-md-3">
-                        <select name="type" class="form-select">
-                            <option value="author" <?php echo $search_type === 'author' ? 'selected' : ''; ?>>Rechercher par auteur</option>
-                            <option value="title" <?php echo $search_type === 'title' ? 'selected' : ''; ?>>Rechercher dans les titres</option>
-                            <option value="content" <?php echo $search_type === 'content' ? 'selected' : ''; ?>>Rechercher dans les messages</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <select name="forum" class="form-select">
-                            <option value="0">Tous les forums</option>
-                            <?php echo build_forum_list($forums); ?>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100" id="searchButton">Rechercher</button>
-                    </div>
+            <form method="get" action="search.php" class="row g-3" onsubmit="return showLoading()">
+                <div class="col-md-6">
+                    <label for="term" class="form-label text-white">Terme à rechercher</label>
+                    <input type="text" class="form-control" id="term" name="term" value="<?php echo secure_output($search_term); ?>" required>
+                </div>
+                <div class="col-md-2">
+                    <label for="type" class="form-label text-white">Type de recherche</label>
+                    <select class="form-select" id="type" name="type">
+                        <option value="author"<?php echo $search_type === 'author' ? ' selected' : ''; ?>>Auteur</option>
+                        <option value="title"<?php echo $search_type === 'title' ? ' selected' : ''; ?>>Titre</option>
+                        <option value="content"<?php echo $search_type === 'content' ? ' selected' : ''; ?>>Message</option>
+                        
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="forum" class="form-label text-white">Forum</label>
+                    <select class="form-select" id="forum" name="forum">
+                        <option value="0">Tous les forums</option>
+                        <?php echo build_forum_list($forums); ?>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Rechercher</button>
                 </div>
             </form>
         </div>
+    </div>
+</div>
 
-        <div id="searchResults">
-          <?php if (!empty($search_term)): ?>
-            <div class="alert alert-info">
-                <?php if ($search_type === 'author'): ?>
-                    Recherche des sujets créés par <strong><?php echo secure_output($search_term); ?></strong>
-                <?php elseif ($search_type === 'content'): ?>
-                    Recherche de "<strong><?php echo secure_output($search_term); ?></strong>" dans les messages
-                <?php else: ?>
-                    Recherche de "<strong><?php echo secure_output($search_term); ?></strong>" dans les titres
-                <?php endif; ?>
-                
-                <?php if ($search_forum > 0): ?>
-                    <?php
-                    // Récupérer le nom du forum
-                    $forum_name_query = $db->prepare("SELECT nom FROM rf_forums WHERE id = :forum_id");
-                    $forum_name_query->bindParam(':forum_id', $search_forum, PDO::PARAM_INT);
-                    $forum_name_query->execute();
-                    $forum_name = $forum_name_query->fetchColumn();
-                    ?>
-                    dans le forum <strong><?php echo secure_output($forum_name); ?></strong>
-                <?php endif; ?>
-                - <?php echo $total_results; ?> résultat(s) trouvé(s)
+<div id="searchResults"<?php echo empty($search_term) ? ' style="display: none;"' : ''; ?>>
+    <?php if (!empty($search_term)): ?>
+        <!-- Pagination en haut de page -->
+        <div class="top-pagination mb-4">
+            <?php echo enhanced_pagination($total_results, $results_per_page, $current_page, $pagination_url, $show_all); ?>
+        </div>
+
+        <!-- Liste des résultats -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h3 class="card-title h5 mb-0">Résultats de recherche</h3>
+                <span class="badge bg-light text-dark"><?php echo $total_results; ?> résultats</span>
             </div>
             
-            <?php if (count($results) > 0): ?>
-                <!-- Pagination en haut de page -->
-                <?php if (!empty($pagination_url)): ?>
-                <div class="top-pagination mb-4">
-                    <?php echo enhanced_pagination($total_results, $results_per_page, $current_page, $pagination_url, $show_all); ?>
-                </div>
-                <?php endif; ?>
-                
-                <div class="list-group">
-                    <?php foreach ($results as $result): ?>
-                        <?php if ($search_type === 'content' && isset($result->message_preview)): ?>
-                            <!-- Résultat de recherche dans les messages avec message_id -->
-                            <div class="message-search-result mb-3">
-                                <!-- Titre du topic comme en-tête -->
-                                <div class="topic-header border-bottom pb-2 mb-2">
-                                    <h5 class="mb-1">
-                                        <a href="topic.php?id=<?php echo $result->id; ?>" class="text-decoration-none">
-                                            <?php echo convert_smileys(secure_output($result->title)); ?>
-                                        </a>
-                                    </h5>
-                                    <div class="d-flex justify-content-between text-muted small">
-                                        <span>par <strong><?php echo secure_output($result->author); ?></strong> dans <a href="forum.php?id=<?php echo $result->forum_id; ?>"><?php echo secure_output($result->forum_name); ?></a></span>
-                                        <span><?php echo format_date($result->date); ?></span>
+            <?php if (!empty($results)): ?>
+                <div class="list-group list-group-flush">
+                    <?php foreach ($results as $topic): ?>
+                        <?php if ($search_type === 'content'): ?>
+                            <div class="list-group-item topic-card">
+                                <a href="topic.php?id=<?php echo $topic->id; ?>" class="row align-items-center text-decoration-none">
+                                    <div class="col-md-7">
+                                        <h4 class="h6 mb-1">
+                                            <?php 
+                                            $titre_securise = secure_output($topic->title);
+                                            echo convert_smileys($titre_securise);
+                                            ?>
+                                        </h4>
+                                        <p class="text-muted small mb-0">
+                                            Par <strong><?php echo secure_output($topic->author); ?></strong>
+                                            dans <span class="forum-name"><?php echo secure_output($topic->forum_name); ?></span>
+                                        </p>
                                     </div>
-                                </div>
-                                
-                                <!-- Message avec lien direct -->
-                                <?php 
-                                // Récupérer l'ID du message qui contient le terme recherché
-                                $message_id_query = $db->prepare("
-                                    SELECT id 
-                                    FROM rf_messages 
-                                    WHERE idTopic = :topic_id 
-                                    AND message LIKE :search_term
-                                    AND message NOT LIKE CONCAT('%href=%', :search_term_raw, '%')
-                                    AND message NOT LIKE CONCAT('%http%', :search_term_raw, '%')
-                                    AND message NOT LIKE CONCAT('%www.%', :search_term_raw, '%')
-                                    AND message NOT LIKE CONCAT('%url=%', :search_term_raw, '%')
-                                    AND visible = '1'
-                                    LIMIT 1
-                                ");
-                                $message_id_query->bindParam(':topic_id', $result->id, PDO::PARAM_INT);
-                                $message_id_query->bindParam(':search_term', $search_term_safe, PDO::PARAM_STR);
-                                $message_id_query->bindParam(':search_term_raw', $search_term, PDO::PARAM_STR);
-                                $message_id_query->execute();
-                                $message_id = $message_id_query->fetchColumn();
-                                ?>
-                                
-                                <a href="topic.php?id=<?php echo $result->id; ?>#message-<?php echo $message_id; ?>" class="list-group-item list-group-item-action">
-                                    <div class="message-preview">
-                                        <?php 
-                                        // Extraire un extrait du message contenant le terme recherché
-                                        $preview = strip_tags($result->message_preview);
-                                        $preview = preg_replace('/\[.*?\]/', '', $preview); // Enlever les tags BBCode
-                                        
-                                        // Trouver la position du terme recherché (sans les %)
-                                        $search_term_clean = str_replace('%', '', $search_term_safe);
-                                        $pos = stripos($preview, $search_term_clean);
-                                        
-                                        // Créer un extrait avec le contexte autour du terme
-                                        if ($pos !== false) {
-                                            $start = max(0, $pos - 75);
-                                            $length = min(250, strlen($preview) - $start);
-                                            $excerpt = substr($preview, $start, $length);
-                                            
-                                            // Ajouter des points de suspension si nécessaire
-                                            if ($start > 0) {
-                                                $excerpt = '...' . $excerpt;
-                                            }
-                                            if ($start + $length < strlen($preview)) {
-                                                $excerpt .= '...';
-                                            }
-                                            
-                                            // Mettre en évidence le terme recherché
-                                            $excerpt = preg_replace('/(' . preg_quote($search_term_clean, '/') . ')/i', '<strong class="bg-warning">$1</strong>', $excerpt);
-                                            
-                                            echo $excerpt;
-                                        } else {
-                                            // Fallback si on ne trouve pas le terme (devrait être rare)
-                                            echo substr(secure_output($preview), 0, 200) . '...';
-                                        }
-                                        ?>
+                                    <div class="col-md-2 text-center">
+                                        <div class="small text-muted">
+                                            <?php echo $topic->reply_count; ?> réponses
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 text-end">
+                                        <small class="text-muted" data-bs-toggle="tooltip" title="Dernier message">
+                                            <?php echo format_date($topic->date); ?>
+                                        </small>
                                     </div>
                                 </a>
+                                <?php if (isset($topic->message_preview)): ?>
+                                    <div class="message-preview">
+                                        <?php 
+                                        $preview = secure_output(strip_tags($topic->message_preview));
+                                        $pos = stripos($preview, $search_term);
+                                        if ($pos !== false) {
+                                            $start = max(0, $pos - 75);
+                                            $length = 150;
+                                            
+                                            if ($start > 0) {
+                                                $preview = substr($preview, $start);
+                                                $firstSpace = strpos($preview, ' ');
+                                                if ($firstSpace !== false) {
+                                                    $preview = substr($preview, $firstSpace + 1);
+                                                }
+                                                $preview = '...' . $preview;
+                                            }
+                                            
+                                            if (strlen($preview) > $length) {
+                                                $preview = substr($preview, 0, $length);
+                                                $lastSpace = strrpos($preview, ' ');
+                                                if ($lastSpace !== false) {
+                                                    $preview = substr($preview, 0, $lastSpace) . '...';
+                                                } else {
+                                                    $preview .= '...';
+                                                }
+                                            }
+                                            
+                                            $preview = preg_replace('/(' . preg_quote($search_term, '/') . ')/i', 
+                                                '<span class="search-highlight">$1</span>', 
+                                                $preview);
+                                        }
+                                        ?>
+                                        <a href="topic.php?id=<?php echo $topic->id; ?>#message-<?php echo $topic->message_id; ?>">
+                                            <?php echo $preview; ?>
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         <?php else: ?>
-                            <!-- Résultats de recherche standard (titre ou auteur) -->
-                            <a href="topic.php?id=<?php echo $result->id; ?>" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1"><?php echo convert_smileys(secure_output($result->title)); ?></h5>
-                                    <small class="text-muted"><?php echo format_date($result->date); ?></small>
+                            <a href="topic.php?id=<?php echo $topic->id; ?>" class="list-group-item list-group-item-action topic-card">
+                                <div class="row align-items-center">
+                                    <div class="col-md-7">
+                                        <h4 class="h6 mb-1">
+                                            <?php 
+                                            $titre_securise = secure_output($topic->title);
+                                            echo convert_smileys($titre_securise);
+                                            ?>
+                                        </h4>
+                                        <p class="text-muted small mb-0">
+                                            Par <strong><?php echo secure_output($topic->author); ?></strong>
+                                            dans <span class="forum-name"><?php echo secure_output($topic->forum_name); ?></span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <div class="small text-muted">
+                                            <?php echo $topic->reply_count; ?> réponses
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 text-end">
+                                        <small class="text-muted" data-bs-toggle="tooltip" title="Dernier message">
+                                            <?php echo format_date($topic->date); ?>
+                                        </small>
+                                    </div>
                                 </div>
-                                <p class="mb-1">
-                                    <small>
-                                        par <strong><?php echo secure_output($result->author); ?></strong> 
-                                        dans <a href="forum.php?id=<?php echo $result->forum_id; ?>"><?php echo secure_output($result->forum_name); ?></a>
-                                        - <?php echo $result->reply_count; ?> réponse(s)
-                                    </small>
-                                </p>
                             </a>
                         <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
-                
-                <!-- Pagination en bas de page -->
-                <?php if (!empty($pagination_url)): ?>
-                <div class="bottom-pagination mt-4">
-                    <?php echo enhanced_pagination($total_results, $results_per_page, $current_page, $pagination_url, $show_all); ?>
-                </div>
-                <?php endif; ?>
             <?php else: ?>
-                <div class="alert alert-warning">
-                    Aucun résultat trouvé pour votre recherche.
+                <div class="card-body">
+                    <p class="text-muted mb-0">Aucun résultat trouvé pour votre recherche.</p>
                 </div>
             <?php endif; ?>
-        <?php endif; ?>
         </div>
-    </div>
+
+        <!-- Pagination en bas de page -->
+        <div class="bottom-pagination mb-4">
+            <?php echo enhanced_pagination($total_results, $results_per_page, $current_page, $pagination_url, $show_all); ?>
+        </div>
+    <?php endif; ?>
 </div>
+
+<!-- Script pour l'animation de chargement -->
+<script>
+function showLoading() {
+    document.getElementById('searchFormContainer').style.display = 'none';
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('loadingSpinner').style.display = 'block';
+    return true;
+}
+
+// Cacher l'animation de chargement si la page est chargée avec des résultats
+document.addEventListener('DOMContentLoaded', function() {
+    var searchResults = document.getElementById('searchResults');
+    var loadingSpinner = document.getElementById('loadingSpinner');
+    
+    if (searchResults && searchResults.querySelector('.card')) {
+        loadingSpinner.style.display = 'none';
+        searchResults.style.display = 'block';
+    }
+});
+</script>
 
 <?php
 // Inclure le pied de page
 include 'includes/footer.php';
 ?>
-
-<!-- Script pour l'animation de chargement -->
-<script>
-function showLoading() {
-    // Cette fonction est appelée lors de la soumission du formulaire
-    document.getElementById('searchFormContainer').style.display = 'none';
-    document.getElementById('searchResults').style.display = 'none';
-    document.getElementById('loadingSpinner').style.display = 'block';
-    return true; // Permettre la soumission du formulaire
-}
-
-// S'assurer que l'animation de chargement est cachée si la page est chargée avec des résultats
-document.addEventListener('DOMContentLoaded', function() {
-    if (document.querySelector('.alert-info')) {
-        document.getElementById('loadingSpinner').style.display = 'none';
-    }
-});
-</script>

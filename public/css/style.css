@@ -23,9 +23,16 @@ body {
 main {
   flex: 1;
   width: 100%;
-  max-width: 1200px;
+  max-width: 960px; /* Largeur maximale fixe pour tout le contenu */
   margin: 0 auto;
   padding: 1rem;
+}
+
+.container {
+  max-width: 960px; /* Même largeur maximale que main */
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
 a {
@@ -59,31 +66,114 @@ header a.text-white {
   letter-spacing: 0.5px;
 }
 
-/* Formulaire de recherche */
-.form-control, .form-select {
-  background-color: #2d2d2d;
-  border: 1px solid #444;
-  color: #e0e0e0;
-  padding: 0.5rem 1rem;
+/* Formulaire de recherche et résultats */
+.search-form-container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto 1.5rem auto;
+  padding: 0;
+}
+
+.card {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto 1.5rem auto;
+  padding: 0;
+  background-color: #1e1e1e;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.card-header {
+  background: linear-gradient(135deg, #1a237e, #283593) !important;
+  color: white !important;
+  border-bottom: none;
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+}
+
+.card-header.bg-primary {
+  background: linear-gradient(135deg, #1976d2, #1565c0) !important;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* Loading spinner */
+#loadingSpinner {
+  width: 100%;
+  max-width: 960px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+#loadingSpinner .spinner-border {
+  margin-bottom: 1rem;
+}
+
+#loadingSpinner p {
+  margin: 0.5rem 0;
+}
+
+#loadingSpinner .text-muted {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Correction de l'espace pour le conteneur de recherche */
+#searchFormContainer {
+  margin-bottom: 1rem;
+}
+
+#searchResults {
+  min-height: 100px; /* Hauteur minimale pour éviter les sauts de page */
+}
+
+/* Pagination */
+.top-pagination,
+.bottom-pagination {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto 1.5rem auto;
+  padding: 0;
+}
+
+.pagination {
+  margin: 0;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Formulaire */
+.row.g-3 {
+  margin: 0;
+  width: 100%;
+}
+
+.col-md-6,
+.col-md-2 {
+  padding: 0.5rem;
+}
+
+/* Résultats de recherche */
+#searchResults {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.search-result-count {
+  font-size: 0.9rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 4px;
-  transition: all 0.3s ease;
-}
-
-.form-control:focus, .form-select:focus {
-  background-color: #333;
-  border-color: #64b5f6;
-  color: #ffffff;
-  box-shadow: 0 0 0 0.25rem rgba(100, 181, 246, 0.25);
-}
-
-.btn-outline-light {
-  border-color: #64b5f6;
-  color: #64b5f6;
-}
-
-.btn-outline-light:hover {
-  background-color: #64b5f6;
-  color: #000;
 }
 
 /* Breadcrumb */
@@ -109,43 +199,88 @@ header a.text-white {
     text-decoration: underline;
 }
 
-/* Cards et containers */
-.card {
-  background-color: #1e1e1e;
+/* Message de bienvenue et alertes */
+.alert {
   border: none;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  margin-bottom: 1.5rem;
-  overflow: hidden;
+  padding: 1rem 1.5rem;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto 1.5rem auto;
 }
 
-.card-header {
-  background: linear-gradient(135deg, #1a237e, #283593) !important;
-  color: white !important;
-  border-bottom: none;
-  padding: 1rem;
-  font-weight: 600;
+.alert-info {
+  background-color: #0d2c4d;
+  color: #e0e0e0;
 }
 
-.card-body {
-  padding: 1.5rem;
-}
-
-.list-group-item {
-  background-color: #1e1e1e;
-  border-color: #333;
-  padding: 1rem;
-  transition: background-color 0.2s;
-}
-
-.list-group-item:hover {
-  background-color: #2a2a2a !important;
+.alert-warning {
+  background-color: #4d3c10;
+  color: #e0e0e0;
 }
 
 /* Forums et Topics listings */
-.forum-card, .topic-card {
+.forum-list-container,
+.topic-list-container,
+.search-results-container,
+.category-container {
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Catégories de forum */
+.category-container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1.5rem;
+}
+
+.category-header {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.category-title {
+  background: linear-gradient(135deg, #1a237e, #283593);
+  color: white;
+  padding: 1rem 1.5rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.forum-list {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background-color: #1e1e1e;
+}
+
+.forum-category {
+  width: 100%;
+  margin-bottom: 1.5rem;
+  background-color: transparent;
+  overflow: hidden;
+}
+
+.forum-card, 
+.topic-card,
+.search-result-item {
   transition: all 0.2s ease;
   border-left: 3px solid transparent;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  margin: 0;
+  background-color: #1e1e1e;
 }
 
 .forum-card:hover, .topic-card:hover {
@@ -182,23 +317,6 @@ header a.text-white {
   background-color: #455a64 !important;
 }
 
-/* Alerts */
-.alert {
-  border: none;
-  border-radius: 8px;
-  padding: 1rem 1.5rem;
-}
-
-.alert-info {
-  background-color: #0d2c4d;
-  color: #e0e0e0;
-}
-
-.alert-warning {
-  background-color: #4d3c10;
-  color: #e0e0e0;
-}
-
 /* Style des messages */
 .message-card {
   overflow: hidden;
@@ -206,6 +324,9 @@ header a.text-white {
   border-radius: 8px;
   box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s;
+  max-width: 960px; /* Largeur maximale fixe */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .message-card:hover {
@@ -232,7 +353,7 @@ header a.text-white {
   width: 100px;
   object-fit: cover;
   object-position: center;
-  border: none; /* Bordure supprimée */
+  border: none;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
@@ -240,7 +361,7 @@ header a.text-white {
 .custom-citation {
     margin: 15px 0;
     border-left: 4px solid #1976d2;
-    background-color: #1e1e1e;
+    background-color: #666666;
     border-radius: 4px;
     overflow: hidden;
 }
@@ -263,8 +384,6 @@ header a.text-white {
     margin: 10px 0;
     padding: 10px 15px;
     background-color: #2a2a2a;
-    border-left: 4px solid #455a64;
-    border-radius: 4px;
     color: #e0e0e0;
     font-style: italic;
 }
@@ -317,32 +436,28 @@ header a.text-white {
 /* Header */
 .header-container {
   position: relative;
-  height: 100px;
+  height: 100px; /* Aligné avec l'avatar */
+  width: 858px; /* 958px (conteneur) - 100px (avatar) */
+  margin-left: 100px; /* Pour l'avatar */
   background: linear-gradient(135deg, #283593, #1976d2);
   overflow: hidden;
 }
 
-/* Rendre l'image de fond à 100% d'opacité (sans filtre) */
 .header-background {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 858px;
+  height: 100px;
   object-fit: cover;
   opacity: 1;
-}
-
-/* Ajouter une ombre sur le texte pour qu'il reste lisible même sur fond clair */
-.has-custom-background .user-info-header {
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9); /* Ombre plus prononcée */
 }
 
 .header-content {
   position: relative;
   z-index: 1;
   height: 100%;
-  padding-left: 120px;
+  padding-left: 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -364,6 +479,26 @@ header a.text-white {
   opacity: 0.95;
 }
 
+/* Message signature styles */
+.message-signature {
+  font-size: 1em;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.signature-separator {
+  border: none;
+  border-top: 2px solid #494949;
+  margin: 0;
+  padding: 0;
+}
+
+.signature-content {
+  background-color: #303030;
+  margin: 0;
+  padding: 10px 15px;
+}
+
 /* Corps du message */
 .message-body {
   padding: 1.5rem;
@@ -371,6 +506,7 @@ header a.text-white {
   color: #e0e0e0;
   border: none;
   line-height: 1.7;
+  margin: 0;
 }
 
 /* Style pour le bouton de lien vers le message */
@@ -416,36 +552,6 @@ header a.text-white {
     animation: highlightPulse 3s ease-in-out infinite !important;
 }
 
-/* Pagination */
-.pagination {
-  margin-top: 2rem;
-  display: flex;
-  justify-content: center;
-}
-
-.page-item.active .page-link {
-  background-color: #1976d2;
-  border-color: #1976d2;
-}
-
-.page-link {
-  background-color: #1e1e1e;
-  border-color: #333;
-  color: #64b5f6;
-}
-
-.page-link:hover {
-  background-color: #333;
-  border-color: #444;
-  color: #90caf9;
-}
-
-.page-item.disabled .page-link {
-  background-color: #1e1e1e;
-  border-color: #333;
-  color: #666;
-}
-
 /* Styles pour les smileys */
 .smiley {
   display: inline-block;
@@ -473,6 +579,22 @@ footer {
 
 /* Styles pour les écrans mobiles */
 @media (max-width: 767.98px) {
+  main, .container, .message-card {
+    max-width: 100%; /* Full width sur mobile */
+    padding: 0.5rem;
+  }
+
+  .header-container {
+    width: calc(100% - 90px);
+    height: 80px;
+    margin-left: 80px;
+  }
+  
+  .header-background {
+    width: 100%;
+    height: 80px;
+  }
+  
   .avatar-container {
     height: 80px;
     width: 80px;
@@ -481,14 +603,6 @@ footer {
   .user-avatar-img {
     height: 80px;
     width: 80px;
-  }
-  
-  .header-container {
-    height: 80px;
-  }
-  
-  .header-content {
-    padding-left: 90px;
   }
   
   .username {
@@ -513,6 +627,22 @@ footer {
   
   .h6 {
     font-size: 0.95rem;
+  }
+
+  .forum-list-container,
+  .topic-list-container,
+  .search-results-container,
+  .forum-card,
+  .topic-card,
+  .card,
+  .list-group {
+    max-width: 100%;
+    padding: 0.5rem;
+  }
+  
+  .row {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
   }
 }
 
@@ -673,41 +803,72 @@ select {
     background-color: #1e1e1e;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     overflow: hidden;
-	transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.quote-box.with-author {
-    border-left: 4px solid #1976d2;
+/* Citation avec auteur - Styles prioritaires */
+.quote-box.with-author,
+.quote-content .quote-box.with-author,
+.quote-box .quote-content .quote-box.with-author,
+.quote-box.with-author .quote-content .quote-box.with-author {
+    border-left: 4px solid #1976d2 !important;
+    background-color: #1e1e1e !important;
 }
 
+.quote-box.with-author .quote-header,
+.quote-content .quote-box.with-author .quote-header,
+.quote-box .quote-content .quote-box.with-author .quote-header,
+.quote-box.with-author .quote-content .quote-box.with-author .quote-header {
+    padding: 10px 15px !important;
+    background-color: #444444 !important;
+    border-bottom: 1px solid #333 !important;
+    color: #e0e0e0 !important;
+    font-size: 0.95rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.quote-box.with-author .quote-header i,
+.quote-content .quote-box.with-author .quote-header i,
+.quote-box .quote-content .quote-box.with-author .quote-header i,
+.quote-box.with-author .quote-content .quote-box.with-author .quote-header i {
+    color: #64b5f6 !important;
+    font-size: 0.9em !important;
+}
+
+.quote-box.with-author .quote-header strong,
+.quote-content .quote-box.with-author .quote-header strong,
+.quote-box .quote-content .quote-box.with-author .quote-header strong,
+.quote-box.with-author .quote-content .quote-box.with-author .quote-header strong {
+    color: #64b5f6 !important;
+}
+
+.quote-box.with-author .quote-content,
+.quote-content .quote-box.with-author .quote-content,
+.quote-box .quote-content .quote-box.with-author .quote-content,
+.quote-box.with-author .quote-content .quote-box.with-author .quote-content {
+    background-color: #242424 !important;
+    padding: 15px !important;
+}
+
+/* Citation simple sans auteur */
 .quote-box.simple-quote {
-    border-left: 4px solid #455a64;
+    border-left: 4px solid #455a64 !important;
+    background-color: #242424 !important;
+    margin: 10px 0;
+    margin-left: 15px;
 }
 
-.quote-header {
-    padding: 10px 15px;
-    background-color: #262626;
-    border-bottom: 1px solid #333;
-    color: #e0e0e0;
-    font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.quote-box.simple-quote .quote-content {
+    padding: 15px !important;
+    background-color: transparent !important;
 }
 
-.quote-header i {
-    color: #64b5f6;
-    font-size: 0.9em;
-}
-
-.quote-header strong {
-    color: #64b5f6;
-}
-
+/* Style commun pour le contenu des citations */
 .quote-content {
     padding: 15px;
     color: #e0e0e0;
-    background-color: #242424;
     line-height: 1.5;
 }
 
@@ -715,18 +876,161 @@ select {
 .quote-content .quote-box {
     margin: 10px 0;
     margin-left: 15px;
-    background-color: #1a1a1a;
 }
 
-.quote-content .quote-box .quote-header {
-    background-color: #222222;
+/* Ajustement des niveaux d'emboîtement profonds */
+.quote-content .quote-box .quote-box {
+    margin-left: 12px;
 }
 
-.quote-content .quote-box .quote-content {
-    background-color: #1e1e1e;
+.quote-content .quote-box .quote-box .quote-box {
+    margin-left: 10px;
 }
 
+/* Effet hover uniforme */
 .quote-box:hover {
     transform: translateX(3px);
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Ajustement des polices pour les niveaux imbriqués */
+.quote-content .quote-box .quote-header {
+    font-size: 0.9rem;
+}
+
+.quote-content .quote-box .quote-box .quote-header {
+    font-size: 0.85rem;
+}
+
+.list-group {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Cards et containers */
+.card {
+  background-color: #1e1e1e;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.card-header {
+  background: linear-gradient(135deg, #1a237e, #283593) !important;
+  color: white !important;
+  border-bottom: none;
+  padding: 1rem;
+  font-weight: 600;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.list-group-item {
+  background-color: #1e1e1e;
+  border-color: #333;
+  padding: 1rem;
+  transition: background-color 0.2s;
+}
+
+.list-group-item:hover {
+  background-color: #2a2a2a !important;
+}
+
+/* Correction des marges pour les conteneurs Bootstrap */
+.row {
+  margin-left: 0;
+  margin-right: 0;
+  width: 100%;
+}
+
+.col, 
+.col-md-2, 
+.col-md-3, 
+.col-md-7, 
+.col-md-9,
+[class^="col-"] {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+/* Liste des forums */
+.forum-list {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.forum-category {
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+/* Résultats de recherche */
+.search-results {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.search-result-item {
+  margin-bottom: 0.5rem;
+}
+
+/* Formulaire de recherche */
+.form-control, .form-select {
+  background-color: #2d2d2d;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: #333;
+  border-color: #64b5f6;
+  color: #ffffff;
+  box-shadow: 0 0 0 0.25rem rgba(100, 181, 246, 0.25);
+}
+
+.btn-outline-light {
+  border-color: #64b5f6;
+  color: #64b5f6;
+}
+
+.btn-outline-light:hover {
+  background-color: #64b5f6;
+  color: #000;
+}
+
+/* Pagination */
+.page-item.active .page-link {
+  background-color: #1976d2;
+  border-color: #1976d2;
+}
+
+.page-link {
+  background-color: #1e1e1e;
+  border-color: #333;
+  color: #64b5f6;
+}
+
+.page-link:hover {
+  background-color: #333;
+  border-color: #444;
+  color: #90caf9;
+}
+
+.page-item.disabled .page-link {
+  background-color: #1e1e1e;
+  border-color: #333;
+  color: #666;
 }
