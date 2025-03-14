@@ -60,7 +60,7 @@ require_once 'includes/session_manager.php';
                                 <span><?php echo secure_output(get_logged_username()); ?></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="dropdownMenuLink">
-                                <li><a class="dropdown-item" href="profile.php">Mon profil</a></li>
+                                <li><a class="dropdown-item" href="profile-view.php?username=<?php echo urlencode(get_logged_username()); ?>">Mon profil</a></li>
                                 <li><a class="dropdown-item" href="messages.php">Mes messages privés</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="logout.php">Déconnexion</a></li>

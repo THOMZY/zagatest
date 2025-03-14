@@ -85,7 +85,7 @@ include 'includes/header.php';
                                         </h4>
                                     </div>
                                     <p class="text-muted small mb-0">
-                                        Conversation avec <?php echo secure_output($conversation->auteur_pseudo); ?>
+                                        Conversation avec <a href="profile-view.php?username=<?php echo urlencode($conversation->auteur_pseudo); ?>" class="text-decoration-none"><?php echo secure_output($conversation->auteur_pseudo); ?></a>
                                     </p>
                                 </div>
                                 <div class="col-md-2 text-center">

@@ -205,7 +205,7 @@ $pagination_url .= $show_all ? "&all=1" : "&page=%d";
                         </a>
                     </div>
                     <div class="user-info-header">
-                        <div class="username"><?php echo secure_output($message->user_name); ?></div>
+                        <div class="username"><a href="profile-view.php?username=<?php echo urlencode($message->user_name); ?>" class="text-white text-decoration-none"><?php echo secure_output($message->user_name); ?></a></div>
                         <div class="user-details">
                             Points: <?php echo $message->user_post_count; ?> | Messages: <?php echo $message->user_post_count; ?> | <?php echo format_date($message->time); ?>
                         </div>

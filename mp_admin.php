@@ -119,34 +119,42 @@ include 'includes/header.php';
         <?php if (!empty($user_conversations)): ?>
             <div class="list-group list-group-flush">
                 <?php foreach ($user_conversations as $conversation): ?>
-                    <a href="message_admin.php?id=<?php echo $conversation->id; ?>&user_id=<?php echo $user_id; ?>" class="list-group-item list-group-item-action message-card d-flex flex-column">
-                        <div class="row align-items-center">
-                            <div class="col-md-7">
-                                <div class="d-flex align-items-center">
-                                    <?php if ($conversation->epingle == '1'): ?>
-                                        <i class="fas fa-thumbtack text-warning me-2" title="Message épinglé"></i>
-                                    <?php endif; ?>
-                                    
-                                    <h4 class="h6 mb-1">
-                                        <?php if ($conversation->lu == '0'): ?>
-                                            <span class="badge bg-primary me-1">Nouveau</span>
-                                        <?php endif; ?>
-                                        <?php echo secure_output($conversation->titre); ?>
-                                    </h4>
-                                </div>
-                                <p class="text-muted small mb-0">
-                                    Conversation avec <?php echo secure_output($conversation->auteur_pseudo); ?>
-                                </p>
+                    <a href="message_admin.php?id=<?php echo $conversation->id; ?>&user_id=<?php echo $user_id; ?>" 
+                       class="list-group-item list-group-item-action py-2">
+                        <div class="d-flex align-items-center" style="gap: 10px;">
+                            <!-- Icônes de statut (largeur fixe) -->
+                            <div style="width: 60px;" class="d-flex">
+                                <?php if ($conversation->epingle == '1'): ?>
+                                    <i class="fas fa-thumbtack text-warning" title="Message épinglé"></i>
+                                <?php endif; ?>
+                                <?php if ($conversation->lu == '0'): ?>
+                                    <span class="badge bg-primary ms-1">Nouveau</span>
+                                <?php endif; ?>
                             </div>
-                            <div class="col-md-2 text-center">
-                                <div class="small">
+
+                            <!-- Titre (largeur fixe) -->
+                            <div style="width: 300px;" class="text-truncate text-center">
+                                <span class="text-white"><?php echo secure_output($conversation->titre); ?></span>
+                            </div>
+
+                            <!-- Interlocuteur (largeur fixe) -->
+                            <div style="width: 200px;" class="text-truncate">
+                                <a href="profile-view.php?username=<?php echo urlencode($conversation->auteur_pseudo); ?>" 
+                                   class="text-decoration-none">
+                                    <?php echo secure_output($conversation->auteur_pseudo); ?>
+                                </a>
+                            </div>
+
+                            <!-- Nombre de messages (largeur fixe) -->
+                            <div style="width: 100px;" class="text-center">
+                                <span class="badge bg-secondary">
                                     <?php echo $conversation->nbMess; ?> message(s)
-                                </div>
+                                </span>
                             </div>
-                            <div class="col-md-3 text-end">
-                                <small class="text-muted" data-bs-toggle="tooltip" title="Dernier message">
-                                    <?php echo format_date($conversation->last_time); ?>
-                                </small>
+
+                            <!-- Date (le reste de l'espace) -->
+                            <div class="text-muted ms-auto">
+                                <?php echo format_date($conversation->last_time); ?>
                             </div>
                         </div>
                     </a>

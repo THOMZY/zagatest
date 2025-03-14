@@ -1,48 +1,42 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// Inclure les fichiers requis
 require_once 'config/database.php';
 require_once 'includes/functions.php';
-require_once 'includes/session_manager.php';
 
-// Vérifier si l'utilisateur est connecté
-if (!is_logged_in()) {
-    header("Location: login.php");
+// Vérifier si un nom d'utilisateur est spécifié
+if (!isset($_GET['username'])) {
+    header('Location: index.php');
     exit;
 }
 
-// Définir le titre de la page
-$page_title = "Mon profil";
+$username = $_GET['username'];
 
 // Récupérer les informations de l'utilisateur
-$user_id = $_SESSION['user_id'];
-
 try {
     $stmt = $db->prepare("
         SELECT 
-            id, pseudo, email, sexe, time, lasttime, nbmess, 
+            id, pseudo, time, lasttime, nbmess, 
             acces, presentation, signature, avatar, postheader
         FROM 
             rf_membres 
         WHERE 
-            id = :user_id
+            pseudo = :username
     ");
-    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+    $stmt->bindParam(':username', $username, PDO::PARAM_STR);
     $stmt->execute();
     
     if ($stmt->rowCount() > 0) {
         $user = $stmt->fetch();
     } else {
         // Rediriger si l'utilisateur n'existe pas
-        header("Location: index.php");
+        header('Location: index.php');
         exit;
     }
 } catch (PDOException $e) {
     die("Erreur lors de la récupération des données: " . $e->getMessage());
 }
+
+// Définir le titre de la page
+$page_title = "Profil de " . secure_output($user->pseudo);
 
 // Inclure l'en-tête
 include 'includes/header.php';
@@ -72,7 +66,7 @@ function get_avatar_path($avatar) {
     <div class="col-md-4">
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
-                <h3 class="card-title h5 mb-0">Informations personnelles</h3>
+                <h3 class="card-title h5 mb-0">Informations du membre</h3>
             </div>
             <div class="card-body text-center">
                 <img src="<?php echo get_avatar_path($user->avatar); ?>" alt="Avatar de <?php echo secure_output($user->pseudo); ?>" class="img-fluid rounded-circle mb-3" style="max-width: 150px;">
@@ -84,7 +78,7 @@ function get_avatar_path($avatar) {
                     // Afficher le statut basé sur le niveau d'accès
                     if ($user->acces == 100): ?>
                         <span class="badge bg-danger">Administrateur</span>
-                    <?php elseif ($user->acces > 1): ?>
+                    <?php elseif ($user->acces > 11): ?>
                         <span class="badge bg-success">Modérateur</span>
                     <?php else: ?>
                         <span class="badge bg-secondary">Membre</span>
@@ -103,24 +97,6 @@ function get_avatar_path($avatar) {
                 <div class="row mb-3">
                     <div class="col-md-4 fw-bold">Nom d'utilisateur:</div>
                     <div class="col-md-8"><?php echo secure_output($user->pseudo); ?></div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-4 fw-bold">Email:</div>
-                    <div class="col-md-8"><?php echo secure_output($user->email); ?></div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-4 fw-bold">Sexe:</div>
-                    <div class="col-md-8">
-                        <?php
-                        switch ($user->sexe) {
-                            case 'm': echo 'Masculin'; break;
-                            case 'f': echo 'Féminin'; break;
-                            default: echo 'Non spécifié'; break;
-                        }
-                        ?>
-                    </div>
                 </div>
                 
                 <div class="row mb-3">
@@ -166,7 +142,7 @@ function get_avatar_path($avatar) {
                             m.time DESC
                         LIMIT 5
                     ");
-                    $messages_stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+                    $messages_stmt->bindParam(':user_id', $user->id, PDO::PARAM_INT);
                     $messages_stmt->execute();
                     
                     if ($messages_stmt->rowCount() > 0): ?>
@@ -206,4 +182,4 @@ function get_avatar_path($avatar) {
 <?php
 // Inclure le pied de page
 include 'includes/footer.php';
-?>
+?> 

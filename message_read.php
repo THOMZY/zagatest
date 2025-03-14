@@ -202,7 +202,7 @@ include 'includes/header.php';
     <div class="topic-info-container">
         <div class="topic-info">
             <span class="text-muted">Conversation avec: </span>
-            <span><?php echo secure_output($conversation->auteur_pseudo); ?></span>
+            <span><a href="profile-view.php?username=<?php echo urlencode($conversation->auteur_pseudo); ?>" class="text-white text-decoration-none"><?php echo secure_output($conversation->auteur_pseudo); ?></a></span>
         </div>
         <div class="message-count">
             <span class="badge"><?php echo count($messages); ?> messages</span>
@@ -240,7 +240,7 @@ include 'includes/header.php';
                         </a>
                     </div>
                     <div class="user-info-header">
-                        <div class="username"><?php echo secure_output($message->user_name); ?></div>
+                        <div class="username"><a href="profile-view.php?username=<?php echo urlencode($message->user_name); ?>" class="text-white text-decoration-none"><?php echo secure_output($message->user_name); ?></a></div>
                         <div class="user-details">
                             <?php echo format_date($message->time); ?>
                         </div>
