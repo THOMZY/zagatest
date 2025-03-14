@@ -1,3 +1,7 @@
+<?php
+// Inclure le gestionnaire de session (le placer au début du header)
+require_once 'includes/session_manager.php';
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -14,6 +18,10 @@
     
     <!-- CSS personnalisé -->
     <link href="public/css/style.css" rel="stylesheet">
+    
+    <!-- jQuery first, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
     <header class="text-white mb-4">
@@ -21,7 +29,7 @@
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
                 <h1 class="h3 mb-2 mb-md-0"><a href="index.php" class="text-white text-decoration-none">Archives du Forum</a></h1>
                 
-                <!-- Barre d'outils avec bouton smiley et recherche -->
+                <!-- Barre d'outils avec bouton smiley, recherche et connexion -->
                 <div class="d-flex align-items-center">
                     <!-- Bouton smiley -->
                     <a href="smiley.php" class="btn btn-outline-light btn-sm me-2" title="Liste des smileys">
@@ -39,10 +47,30 @@
                     </button>
                     
                     <!-- Formulaire de recherche -->
-                    <form action="search.php" method="GET" class="d-flex">
+                    <form action="search.php" method="GET" class="d-flex me-2">
                         <input type="text" name="term" class="form-control form-control-sm me-2" placeholder="Rechercher..." aria-label="Rechercher">
                         <button type="submit" class="btn btn-outline-light btn-sm">Rechercher</button>
                     </form>
+                    
+                    <!-- Bouton connexion/déconnexion -->
+                    <?php if (is_logged_in()): ?>
+                        <div class="dropdown">
+                            <a href="#" class="btn btn-primary btn-sm dropdown-toggle d-flex align-items-center" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user me-1"></i>
+                                <span><?php echo secure_output(get_logged_username()); ?></span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="dropdownMenuLink">
+                                <li><a class="dropdown-item" href="profile.php">Mon profil</a></li>
+                                <li><a class="dropdown-item" href="messages.php">Mes messages privés</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="logout.php">Déconnexion</a></li>
+                            </ul>
+                        </div>
+                    <?php else: ?>
+                        <a href="login.php" class="btn btn-primary btn-sm">
+                            <i class="fas fa-sign-in-alt me-1"></i> Connexion
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -72,69 +100,45 @@
     <!-- Modal des paramètres -->
     <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content bg-dark text-white">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title" id="settingsModalLabel">Paramètres</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="settingsModalLabel">Paramètres d'affichage</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="list-group list-group-flush bg-dark" id="settingsList">
-                        <div class="list-group-item bg-dark text-white border-secondary">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1">Signatures des utilisateurs</h6>
-                                    <small class="text-muted">Afficher les signatures en bas des messages</small>
-                                </div>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="showSignatures" checked>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showSignaturesSwitch" checked>
+                        <label class="form-check-label" for="showSignaturesSwitch">Afficher les signatures</label>
                     </div>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Script pour gérer les paramètres -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Récupérer les paramètres sauvegardés
-        const savedSettings = JSON.parse(localStorage.getItem('forumSettings') || '{"showSignatures": true}');
+        const settings = JSON.parse(localStorage.getItem('forumSettings') || '{"showSignatures": true}');
+        const showSignaturesSwitch = document.getElementById('showSignaturesSwitch');
         
-        // Éléments du DOM
-        const showSignaturesToggle = document.getElementById('showSignatures');
+        // Initialiser l'état du switch
+        showSignaturesSwitch.checked = settings.showSignatures !== false;
         
-        // Fonction pour sauvegarder les paramètres
-        function saveSettings(settings) {
+        // Gérer le changement de paramètre
+        showSignaturesSwitch.addEventListener('change', function() {
+            // Mettre à jour les paramètres
+            settings.showSignatures = this.checked;
             localStorage.setItem('forumSettings', JSON.stringify(settings));
-            // Émettre un événement personnalisé pour notifier les changements
-            window.dispatchEvent(new CustomEvent('settingsChanged', { detail: settings }));
-        }
-        
-        // Fonction pour mettre à jour l'interface en fonction des paramètres
-        function updateUI(settings) {
-            showSignaturesToggle.checked = settings.showSignatures !== false;
-        }
-        
-        // Écouteur d'événement pour le toggle des signatures
-        showSignaturesToggle.addEventListener('change', function() {
-            const settings = {
-                ...savedSettings,
-                showSignatures: this.checked
-            };
-            saveSettings(settings);
+            
+            // Émettre un événement pour notifier le changement
+            window.dispatchEvent(new CustomEvent('settingsChanged', {
+                detail: settings
+            }));
         });
-        
-        // Initialiser l'interface avec les paramètres sauvegardés
-        updateUI(savedSettings);
     });
     </script>
-</body>
+    
+    </body>
 </html>

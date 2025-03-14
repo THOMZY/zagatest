@@ -995,3 +995,41 @@ select {
   border-color: #333;
   color: #666;
 }
+
+/* Style pour les aperçus de messages dans le profil */
+.message-preview {
+    background-color: #2a2a2a;
+    padding: 10px 15px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    transition: background-color 0.2s ease;
+}
+
+.message-preview:hover {
+    background-color: #3a3a3a;
+}
+
+/* S'assurer que les liens avec texte blanc sont bien visibles */
+a.text-white {
+    color: #ffffff !important;
+}
+
+a .text-white {
+    color: #ffffff !important;
+}
+
+/* Style pour les titres de topics dans le profil */
+a.text-primary {
+    color: #64b5f6 !important; /* Bleu Bootstrap plus clair pour une meilleure visibilité sur fond sombre */
+}
+
+a.text-primary:hover {
+    color: #90caf9 !important; /* Bleu encore plus clair au survol */
+    text-decoration: underline !important;
+}
+
+/* Améliorer la lisibilité des aperçus de message */
+a .message-preview {
+    color: #f0f0f0;
+}

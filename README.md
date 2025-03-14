@@ -12,13 +12,10 @@
 ### Sécurité et Authentification
 
 - **Secret Accès** : Mettre en place un système de secret pour accéder au forum. ( personne ne doit le voir sauf si permis )
-- **Messagerie Privé** : Permettre lecture des MPs.
-- **Login** : Remettre le login pour acceder aux MPs.
 
 ### Bufixes needed :
 
 - **BBcode** : youtube / balise custom big, small, droite, gauche, roll
-
 
 ### Contenu Fun
 
