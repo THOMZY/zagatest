@@ -14,9 +14,6 @@ if (!is_logged_in()) {
     exit;
 }
 
-// Récupérer l'ID de l'utilisateur connecté
-$user_id = $_SESSION['user_id'];
-
 // Vérifier si l'ID du message est spécifié
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header("Location: messages.php");
@@ -24,6 +21,10 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 }
 
 $mp_id = (int)$_GET['id'];
+
+// Détecter le mode admin
+$is_admin_mode = get_user_access_level() == 100 && isset($_GET['user_id']) && is_numeric($_GET['user_id']);
+$user_id = $is_admin_mode ? (int)$_GET['user_id'] : $_SESSION['user_id'];
 
 // Vérifier si l'utilisateur a accès à ce message privé
 try {
@@ -39,19 +40,27 @@ try {
     $has_access = $access_stmt->fetchColumn();
     
     if (!$has_access) {
-        header("Location: messages.php");
+        header("Location: " . ($is_admin_mode ? "mp_admin.php" : "messages.php"));
         exit;
     }
     
-    // Marquer le message comme lu
-    $update_stmt = $db->prepare("
-        UPDATE rf_mp_mbr 
-        SET lu = '1' 
-        WHERE mpid = :mp_id AND idPseudo = :user_id
-    ");
-    $update_stmt->bindParam(':mp_id', $mp_id, PDO::PARAM_INT);
-    $update_stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
-    $update_stmt->execute();
+    if ($is_admin_mode) {
+        // Récupérer le nom de l'utilisateur cible en mode admin
+        $user_stmt = $db->prepare("SELECT pseudo FROM rf_membres WHERE id = :user_id");
+        $user_stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $user_stmt->execute();
+        $target_username = $user_stmt->fetchColumn();
+    } else {
+        // Marquer le message comme lu en mode normal
+        $update_stmt = $db->prepare("
+            UPDATE rf_mp_mbr 
+            SET lu = '1' 
+            WHERE mpid = :mp_id AND idPseudo = :user_id
+        ");
+        $update_stmt->bindParam(':mp_id', $mp_id, PDO::PARAM_INT);
+        $update_stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $update_stmt->execute();
+    }
     
     // Récupérer les informations sur la conversation
     $conv_stmt = $db->prepare("
@@ -77,12 +86,12 @@ try {
     $conversation = $conv_stmt->fetch();
     
     if (!$conversation) {
-        header("Location: messages.php");
+        header("Location: " . ($is_admin_mode ? "mp_admin.php" : "messages.php"));
         exit;
     }
     
     // Définir le titre de la page
-    $page_title = "MP: " . $conversation->titre;
+    $page_title = "MP: " . $conversation->titre . ($is_admin_mode ? " (Mode Admin)" : "");
     
     // Récupérer les messages de la conversation
     $messages_stmt = $db->prepare("
@@ -154,8 +163,8 @@ function get_header_path($header) {
     return '';
 }
 
-// Épingler/Désépingler la conversation
-if (isset($_GET['toggle_pin']) && $_GET['toggle_pin'] == 1) {
+// Épingler/Désépingler la conversation (mode normal uniquement)
+if (!$is_admin_mode && isset($_GET['toggle_pin']) && $_GET['toggle_pin'] == 1) {
     try {
         $new_status = $conversation->epingle == '1' ? '0' : '1';
         
@@ -170,7 +179,7 @@ if (isset($_GET['toggle_pin']) && $_GET['toggle_pin'] == 1) {
         $pin_stmt->execute();
         
         // Rediriger pour éviter les soumissions multiples
-        header("Location: message_read.php?id=" . $mp_id);
+        header("Location: message_view.php?id=" . $mp_id);
         exit;
     } catch (PDOException $e) {
         die("Erreur lors de la mise à jour: " . $e->getMessage());
@@ -181,19 +190,29 @@ if (isset($_GET['toggle_pin']) && $_GET['toggle_pin'] == 1) {
 include 'includes/header.php';
 ?>
 
+<?php if ($is_admin_mode): ?>
+<!-- Avertissement administrateur -->
+<div class="alert alert-danger mb-4">
+    <h4 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Mode Administrateur</h4>
+    <p class="mb-0">Vous consultez actuellement les messages privés de <strong><?php echo secure_output($target_username); ?></strong>. Cette fonctionnalité est réservée à la modération et à l'administration.</p>
+</div>
+<?php endif; ?>
+
 <!-- Fil d'Ariane et actions -->
 <div class="d-flex justify-content-between align-items-center mb-3">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="messages.php">Messages privés</a></li>
+            <li class="breadcrumb-item"><a href="<?php echo $is_admin_mode ? 'mp_admin.php' : 'messages.php'; ?>"><?php echo $is_admin_mode ? 'Admin MP' : 'Messages privés'; ?></a></li>
             <li class="breadcrumb-item active" aria-current="page"><?php echo secure_output($conversation->titre); ?></li>
         </ol>
     </nav>
+    <?php if (!$is_admin_mode): ?>
     <div class="btn-group">
-        <a href="message_read.php?id=<?php echo $mp_id; ?>&toggle_pin=1" class="btn btn-sm <?php echo $conversation->epingle == '1' ? 'btn-warning' : 'btn-outline-warning'; ?>">
+        <a href="message_view.php?id=<?php echo $mp_id; ?>&toggle_pin=1" class="btn btn-sm <?php echo $conversation->epingle == '1' ? 'btn-warning' : 'btn-outline-warning'; ?>">
             <i class="fas fa-thumbtack me-1"></i> <?php echo $conversation->epingle == '1' ? 'Désépingler' : 'Épingler'; ?>
         </a>
     </div>
+    <?php endif; ?>
 </div>
 
 <!-- Titre du topic avec date et nombre de messages -->
@@ -201,8 +220,13 @@ include 'includes/header.php';
     <h2 class="display-6"><?php echo secure_output($conversation->titre); ?></h2>
     <div class="topic-info-container">
         <div class="topic-info">
-            <span class="text-muted">Conversation avec: </span>
-            <span><a href="profile-view.php?username=<?php echo urlencode($conversation->auteur_pseudo); ?>" class="text-white text-decoration-none"><?php echo secure_output($conversation->auteur_pseudo); ?></a></span>
+            <span class="text-muted"><?php echo $is_admin_mode ? 'Conversation entre : ' : 'Conversation avec : '; ?></span>
+            <span>
+                <?php if ($is_admin_mode): ?>
+                    <a href="profile-view.php?username=<?php echo urlencode($target_username); ?>" class="text-white text-decoration-none"><?php echo secure_output($target_username); ?></a> et 
+                <?php endif; ?>
+                <a href="profile-view.php?username=<?php echo urlencode($conversation->auteur_pseudo); ?>" class="text-white text-decoration-none"><?php echo secure_output($conversation->auteur_pseudo); ?></a>
+            </span>
         </div>
         <div class="message-count">
             <span class="badge"><?php echo count($messages); ?> messages</span>
@@ -263,61 +287,14 @@ include 'includes/header.php';
     <p class="mb-0">Ce forum est en mode lecture seule. Il n'est pas possible d'ajouter de nouvelles réponses aux messages privés.</p>
 </div>
 
-<!-- Script pour gérer l'affichage des signatures -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Récupérer le paramètre des signatures
-    const settings = JSON.parse(localStorage.getItem('forumSettings') || '{"showSignatures": true}');
-    const signatures = document.querySelectorAll('.signature-content, .signature-separator');
-    
-    // Fonction pour mettre à jour l'affichage des signatures
-    function updateSignatures(show) {
-        signatures.forEach(signature => {
-            signature.style.display = show ? 'block' : 'none';
-        });
-    }
-    
-    // Appliquer l'état initial
-    updateSignatures(settings.showSignatures);
-    
-    // Écouter les changements de paramètres
-    window.addEventListener('settingsChanged', function(event) {
-        updateSignatures(event.detail.showSignatures);
-    });
-});
-</script>
+<!-- Retour à la liste -->
+<div class="d-flex justify-content-center mt-4">
+    <a href="<?php echo $is_admin_mode ? 'mp_admin.php' : 'messages.php'; ?>" class="btn btn-primary">
+        <i class="fas fa-arrow-left me-2"></i> <?php echo $is_admin_mode ? 'Retour à la recherche' : 'Retour aux messages'; ?>
+    </a>
+</div>
 
 <?php
 // Inclure le pied de page
 include 'includes/footer.php';
-?>
-
-<!-- Modal des paramètres -->
-<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark text-white">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="settingsModalLabel">Paramètres</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-            </div>
-            <div class="modal-body">
-                <div class="list-group list-group-flush bg-dark" id="settingsList">
-                    <div class="list-group-item bg-dark text-white border-secondary">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">Signatures des utilisateurs</h6>
-                                <small class="text-muted">Afficher les signatures en bas des messages</small>
-                            </div>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="showSignatures" checked>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-secondary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-            </div>
-        </div>
-    </div>
-</div>
+?> 

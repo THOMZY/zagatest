@@ -1,3 +1,5 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/thomzy/zagatest/badge/main)](https://www.codefactor.io/repository/github/thomzy/zagatest/overview/main)
+
 # 
 
 ---
