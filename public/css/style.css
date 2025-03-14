@@ -23,13 +23,13 @@ body {
 main {
   flex: 1;
   width: 100%;
-  max-width: 960px; /* Largeur maximale fixe pour tout le contenu */
+  max-width: 1200px; /* Augmentation de la largeur maximale */
   margin: 0 auto;
   padding: 1rem;
 }
 
 .container {
-  max-width: 960px; /* Même largeur maximale que main */
+  max-width: 1200px; /* Augmentation de la largeur maximale */
   width: 100%;
   margin: 0 auto;
   padding: 0 1rem;
@@ -277,23 +277,20 @@ header a.text-white {
 
 /* Style des messages */
 .message-card {
-  overflow: hidden;
-  margin-bottom: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s;
-  max-width: 960px; /* Largeur maximale fixe */
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.message-card:hover {
-  transform: translateY(-2px);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 1.5rem;
+  background-color: #1e1e1e;
+  border-radius: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  overflow: visible;
+  position: relative;
 }
 
 .message-outer-container {
   position: relative;
-  width: 100%;
+  padding: 0;
+  min-height: 100px;
 }
 
 /* Avatar */
@@ -301,18 +298,16 @@ header a.text-white {
   position: absolute;
   left: 0;
   top: 0;
-  z-index: 2;
-  height: 100px;
   width: 100px;
+  height: 100px;
+  z-index: 3;
 }
 
 .user-avatar-img {
-  height: 100px;
   width: 100px;
+  height: 100px;
+  border-radius: 0;
   object-fit: cover;
-  object-position: center;
-  border: none;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* Style pour les citations personnalisées */
@@ -391,34 +386,37 @@ header a.text-white {
     to { opacity: 1; }
 }
 
-/* Header */
+/* Header utilisateur */
 .header-container {
   position: relative;
-  height: 100px; /* Aligné avec l'avatar */
-  width: 858px; /* 958px (conteneur) - 100px (avatar) */
-  margin-left: 100px; /* Pour l'avatar */
-  background: linear-gradient(135deg, #283593, #1976d2);
-  overflow: hidden;
+  width: 100%;
+  height: 100px;
+  margin: 0;
 }
 
 .header-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 858px;
+  width: 100%;
   height: 100px;
   object-fit: cover;
-  opacity: 1;
+  border-radius: 0;
+}
+
+.header-background.default {
+  background-image: url('../img/bars/default-bars.png');
+  background-size: cover;
+  background-position: center;
 }
 
 .header-content {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  padding-left: 20px;
+  position: absolute;
+  top: 0;
+  left: 120px; /* Décalé pour laisser place à l'avatar */
+  right: 0;
+  bottom: 0;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  align-items: center;
+  padding: 0 15px;
+  z-index: 2;
 }
 
 .user-info-header {
@@ -430,6 +428,16 @@ header a.text-white {
   font-size: 1.2rem;
   font-weight: bold;
   margin-bottom: 5px;
+}
+
+.username a {
+  color: white;
+  text-decoration: none;
+}
+
+.username a:hover {
+  color: #90caf9;
+  text-decoration: underline;
 }
 
 .user-details {
@@ -457,14 +465,12 @@ header a.text-white {
   padding: 10px 15px;
 }
 
-/* Corps du message */
+/* Contenu du message */
 .message-body {
-  padding: 1.5rem;
-  background-color: #262626;
-  color: #e0e0e0;
-  border: none;
-  line-height: 1.7;
-  margin: 0;
+  padding: 15px;
+  background-color: #1e1e1e;
+  border-radius: 0;
+  margin-top: 15px;
 }
 
 /* Style pour le bouton de lien vers le message */
@@ -542,25 +548,37 @@ footer {
     padding: 0.5rem;
   }
 
-  .header-container {
-    width: calc(100% - 90px);
-    height: 80px;
-    margin-left: 80px;
-  }
-  
-  .header-background {
-    width: 100%;
-    height: 80px;
+  .message-outer-container {
+    padding: 0;
   }
   
   .avatar-container {
-    height: 80px;
-    width: 80px;
+    width: 60px;
+    height: 60px;
+    left: 0;
   }
   
   .user-avatar-img {
-    height: 80px;
-    width: 80px;
+    width: 60px;
+    height: 60px;
+  }
+  
+  .header-container {
+    height: 60px;
+  }
+  
+  .header-background {
+    height: 60px;
+  }
+  
+  .header-background.default {
+    background-image: url('../img/bars/default-bars.png');
+    background-size: cover;
+    background-position: center;
+  }
+  
+  .header-content {
+    left: 70px;
   }
   
   .username {

@@ -185,15 +185,12 @@ $pagination_url .= $show_all ? "&all=1" : "&page=%d";
             </div>
             
             <!-- Header avec informations utilisateur -->
-            <?php 
-            $header_path = get_header_path($message->postheader);
-            $hasCustomHeader = !empty($header_path);
-            ?>
-            
-            <div class="header-container <?php echo $hasCustomHeader ? 'has-custom-background' : ''; ?>">
-                <?php if ($hasCustomHeader): ?>
-                <img src="<?php echo $header_path; ?>" alt="Background" class="header-background">
-                <?php endif; ?>
+            <div class="header-container">
+                <div class="header-background <?php echo empty($message->postheader) ? 'default' : ''; ?>">
+                    <?php if (!empty($message->postheader)): ?>
+                        <img src="<?php echo get_header_path($message->postheader); ?>" alt="Background" class="header-background">
+                    <?php endif; ?>
+                </div>
                 
                 <div class="header-content">
                     <div class="link-button-container">
