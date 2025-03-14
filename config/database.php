@@ -1,9 +1,9 @@
 <?php
 // Configuration de la base de données
 $db_host = 'localhost';      // Adresse du serveur MySQL
-$db_name = 'hime7899_forumdb';  // Nom de la base de données
-$db_user = 'hime7899_thomzy';           // Nom d'utilisateur MySQL
-$db_pass = 'Shinichi034!';               // Mot de passe MySQL
+$db_name = 'database';  // Nom de la base de données
+$db_user = 'user';           // Nom d'utilisateur MySQL
+$db_pass = 'pass';               // Mot de passe MySQL
 
 // Établir la connexion à la base de données
 try {
